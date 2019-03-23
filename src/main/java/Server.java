@@ -13,8 +13,10 @@ public class Server {
                 System.out.println("now listening on :" + port);
 
                 Socket socket = ss.accept();
-                Thread t1 = new Thread(new ThreadSocket(socket));
+                Socket socket2 = ss.accept();
+                Thread t1 = new Thread(new ThreadSocket(socket, socket2));
                 t1.start();
+
 
                 System.out.println("finished");
                 System.out.println();

@@ -1,9 +1,8 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Scanner;
 
 public class Client {
@@ -16,27 +15,62 @@ public class Client {
              DataOutputStream dataOut = new DataOutputStream(out);
              DataInputStream dataIn = new DataInputStream(in)) {
 
+            //Path saveToPath;
+            //int type = Integer.parseInt(args[0]);
             int type = 1;
 
             System.out.println("connected; sending data");
+
             Scanner sc = new Scanner(System.in);
 
-            while (sc.hasNextLine()) {
-                String ok = sc.nextLine();
-                if (!(ok.contains("END"))) {
-                    String toSend = ok;
+            if (type == 1) {
 
-                    dataOut.writeInt(1);
-                    dataOut.writeUTF(toSend);
-                    System.out.println("sent " + toSend);
+                while (sc.hasNextLine()) {
+
+                    String toSend = sc.nextLine();
+
+                    if (!(toSend.contains("END"))) {
+
+
+
+                        Commands.writeMessage(dataOut, toSend, 1, true);
+                        System.out.println("sent " + toSend);
+
+                        /*Commands.getType(dataIn);
+                        String clientMessageEcho = Commands.readMessage(dataIn, type);
+                        System.out.println("received '" + clientMessageEcho + "' back");*/
+                    } else {
+                        dataOut.writeInt(0);
+                    }
+                }
+
+            }
+            /*else if (type == 2) {
+                String path = args[1];
+                saveToPath = Paths.get(args[2]);
+
+                Commands.writeMessage(dataOut, path, 2, true);
+
+                int checkType = Commands.getType(dataIn);
+
+                if (checkType == 3) {
+                    throw new IllegalArgumentException("error, server-relative path needed");
+
+                } else if (checkType == 2) {
+                    byte[] file = Commands.readFile(dataIn, checkType);
+                    Files.write(saveToPath, file);
+                    System.out.println("received" + saveToPath.toString());
+                    System.out.println("File size: \n" + new File(args[2]).length() + " bytes\n");
+                    System.out.println("File was written to: " + saveToPath);
 
                 } else {
-                    dataOut.writeInt(0);
-
-                    System.out.println("Ending connection");
-                    break;
+                    throw new IllegalArgumentException("error, could not find file");
                 }
-            }
+
+
+
+            }*/
+
         }
 
         System.out.println("finished");
