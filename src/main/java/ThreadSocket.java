@@ -1,4 +1,7 @@
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 
 public class ThreadSocket implements Runnable {
@@ -16,28 +19,23 @@ public class ThreadSocket implements Runnable {
              DataInputStream dataIn = new DataInputStream(in);
              OutputStream out = socket.getOutputStream();
              DataOutputStream dataOut = new DataOutputStream(out)) {
+            while (true) {
 
-            System.out.println("client connected; waiting for a message");
-            int type = Commands.getType(dataIn);
+                System.out.println("client connected; waiting for a message");
+                int type = Commands.getType(dataIn);
+                if (type == 0 ) {
+                    System.out.println("Client ended connection");
+                    break;
 
-            // Thread.sleep(5000); //used this for testing
+                }
 
-            String clientMessage = Commands.readMessage(dataIn, type);
+                String clientMessage = Commands.readMessage(dataIn, type);
 
-            if (type == 1) {
                 System.out.println("received " + clientMessage);
-                System.out.println("echoing message '" + clientMessage + "' back");
-
-            } else {
-                System.out.println("received file request, preparing to send");
             }
 
-
-            Commands.writeMessage(dataOut, clientMessage, type, false);
-
-
         } catch (Exception e) {
-            throw new RuntimeException();
+            e.printStackTrace();
         }
 
 
