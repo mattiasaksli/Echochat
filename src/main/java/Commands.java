@@ -13,6 +13,9 @@ public class Commands {
             socketOut.writeUTF(message);
 
         } else {
+            if (messageType == -1) {
+                socketOut.writeInt(messageType);
+            }
             if (messageType == 1) {
                 socketOut.writeInt(messageType);
                 socketOut.writeUTF(message);
@@ -43,7 +46,9 @@ public class Commands {
 
     static String readMessage(DataInputStream socketIn, int type) throws Exception {
 
-        if (type == 1) {
+        if (type == -1) {
+            return "";
+        } else if (type == 1) {
             return processMessage1(socketIn);
         } else if (type == 2) {
             return processMessage2(socketIn);
@@ -84,10 +89,5 @@ public class Commands {
 
         return Files.readAllBytes(path);
     }
-
-
-
-
-
 
 }

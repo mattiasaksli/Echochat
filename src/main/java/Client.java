@@ -1,8 +1,5 @@
 import java.io.*;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Scanner;
 
 public class Client {
@@ -29,19 +26,20 @@ public class Client {
 
                     String toSend = sc.nextLine();
 
-                    if (!(toSend.contains("END"))) {
-
-
-
-                        Commands.writeMessage(dataOut, toSend, 1, true);
-                        System.out.println("sent " + toSend);
-
-                        /*Commands.getType(dataIn);
-                        String clientMessageEcho = Commands.readMessage(dataIn, type);
-                        System.out.println("received '" + clientMessageEcho + "' back");*/
-                    } else {
-                        dataOut.writeInt(0);
+                    if ((toSend.equals("END"))) {
+                        Commands.writeMessage(dataOut, "", -1, true);
+                        int gotType = Commands.getType(dataIn);
+                        Commands.readMessage(dataIn, gotType);
+                        break;
                     }
+
+                    Commands.writeMessage(dataOut, toSend, 1, true);
+                    System.out.println("sent " + toSend);
+
+                    Commands.getType(dataIn);
+                    String clientMessageEcho = Commands.readMessage(dataIn, type);
+                    System.out.println("received " + clientMessageEcho);
+
                 }
 
             }
