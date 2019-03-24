@@ -40,7 +40,7 @@ public class ThreadSocket implements Runnable {
                 String clientMessage = Commands.readMessage(dataIn, type);
                 String clientMessage2 = Commands.readMessage(dataIn2, type);
 
-                String combined = "\tClient1: '" + clientMessage + "'\n\t\tClient2: '" + clientMessage2 + "'";
+                String combined = "\tClient1: '" + clientMessage;
 
                 if (type == 1 || type2 == 1) {
                     System.out.println("received " + clientMessage);

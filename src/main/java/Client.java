@@ -1,10 +1,44 @@
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Scanner;
 
 public class Client {
 
     public static void main(String[] args) throws Exception {
+
+        ClientOptions.welcome();
+        Scanner sc1 = new Scanner(System.in);
+
+        while (true) {
+            int chooseOption = Integer.parseInt(sc1.next());
+
+            // LOG IN
+            if (chooseOption == 1) {
+                ClientOptions.login();
+                if (ClientOptions.loggedIn())
+                    connectToServer();
+                else
+                    ClientOptions.welcome();
+
+            //CREATE NEW ACCOUNT
+            } else if (chooseOption == 2) {
+                ClientOptions.createNewAccount();
+                ClientOptions.login();
+                if (ClientOptions.loggedIn())
+                    connectToServer();
+
+            // EXIT THE PROGRAM
+            } else if (chooseOption == 5) {
+                ClientOptions.exit();
+                break;
+            }
+        }
+    }
+
+    private static void connectToServer() throws Exception {
         System.out.println("connecting to server");
         try (Socket socket = new Socket("localhost", 1337);
              OutputStream out = socket.getOutputStream();
@@ -73,6 +107,7 @@ public class Client {
 
         System.out.println("finished");
         System.out.println();
+
     }
 
 }
