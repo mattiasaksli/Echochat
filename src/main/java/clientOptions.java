@@ -1,13 +1,19 @@
+import de.mkammerer.argon2.Argon2;
+import de.mkammerer.argon2.Argon2Factory;
+
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 
-public class ClientOptions {
-    private static boolean loggedin;
+public class clientOptions {
+    private boolean loggedin;
+    final Argon2 argon2 = Argon2Factory.create();
 
-    /*toDO
+    /*TODO
      * make new account
-     *
+     * Send account information to the server
      * */
-    public static void welcome() {
+    public void welcome() {
         System.out.println("//////////////////////////////");
         System.out.println("What would you like to do?");
         System.out.println("Press 1 to log in");
@@ -16,7 +22,7 @@ public class ClientOptions {
         System.out.println("//////////////////////////////");
     }
 
-    public static boolean login() {
+    boolean login() {
         Scanner sc = new Scanner(System.in);
 
         while (true) {
@@ -28,7 +34,7 @@ public class ClientOptions {
 
             if (isFromDatabase(username, password)) {
                 //TODO login successful
-                System.out.println("lOGIN SUCCESSFUL!");
+                System.out.println("LOGIN SUCCESSFUL!");
                 loggedin = true;
                 return true;
 
@@ -42,35 +48,46 @@ public class ClientOptions {
                     return false;
                 }
             }
+            sc.close();
         }
     }
 
-    private static boolean isFromDatabase(String username, String password) {
+    private boolean isFromDatabase(String username, String password) {
 //        return username.equals("Marten") && password.equals("ok");
         //RETURNING TRUE FOR TESTING PURPOSES
         return true;
     }
 
-    public static void exit() {
-        System.out.println("Bye-bye!");
-        System.exit(0);
-    }
-
-    public static void createNewAccount() {
+    void createNewAccount() throws NoSuchAlgorithmException, InvalidKeySpecException {
         Scanner sc = new Scanner(System.in);
         System.out.println("Enter new username: ");
         String newUsername = sc.nextLine();
         System.out.println("Enter new password: ");
-        String newPassword = sc.nextLine();
-
-        //TODO ADD ACCOUNT TO DATABASE
+        String newPassword = encryptData(sc.nextLine());
 
         System.out.println("Account created successfully!");
 
+        //TODO
+        // ADD ACCOUNT TO DATABASE
+        // add encryption to the password
 
+        sc.close();
     }
 
-    static boolean loggedIn() {
+
+    private String encryptData(String password) {
+        return argon2.hash(30, 65536, 1, password.toCharArray());
+    }
+
+
+
+    boolean loggedIn() {
         return loggedin;
     }
+
+    void exit() {
+        System.out.println("Bye-bye!");
+        System.exit(0);
+    }
+
 }

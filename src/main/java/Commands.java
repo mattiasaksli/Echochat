@@ -31,7 +31,11 @@ public class Commands {
                     socketOut.write(processFile(message));
                     System.out.println("file on its way!");
 
-                } else {
+                }else if (messageType == 10){
+                    socketOut.writeInt(10);
+
+                }
+                else {
                     socketOut.writeInt(4);
                     System.out.println("sent no such file error");
                 }
