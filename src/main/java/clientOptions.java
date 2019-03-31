@@ -1,13 +1,10 @@
-import de.mkammerer.argon2.Argon2;
-import de.mkammerer.argon2.Argon2Factory;
-
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 
 public class clientOptions {
     private boolean loggedin;
-    final Argon2 argon2 = Argon2Factory.create();
+//    final Argon2 argon2 = Argon2Factory.create();
 
     /*TODO
      * make new account
@@ -63,8 +60,8 @@ public class clientOptions {
         System.out.println("Enter new username: ");
         String newUsername = sc.nextLine();
         System.out.println("Enter new password: ");
-        String newPassword = encryptData(sc.nextLine());
-
+//        String newPassword = encryptData(sc.nextLine());
+        String a = sc.nextLine();
         System.out.println("Account created successfully!");
 
         //TODO
@@ -75,10 +72,9 @@ public class clientOptions {
     }
 
 
-    private String encryptData(String password) {
-        return argon2.hash(30, 65536, 1, password.toCharArray());
-    }
-
+//    private String encryptData(String password) {
+//        return argon2.hash(30, 65536, 1, password.toCharArray());
+//    }
 
 
     boolean loggedIn() {

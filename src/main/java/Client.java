@@ -61,8 +61,6 @@ public class Client {
              DataOutputStream dataOut = new DataOutputStream(out);
              DataInputStream dataIn = new DataInputStream(in)) {
 
-            //Path saveToPath;
-            //int type = Integer.parseInt(args[0]);
             int type = 1;
 
             System.out.println("connected; sending data");
@@ -71,24 +69,25 @@ public class Client {
 
             if (type == 1) {
 
-                while (sc.hasNextLine()) {
+                while (true) {
 
                     String toSend = sc.nextLine();
 
                     if ((toSend.equals("END"))) {
-                        Commands.writeMessage(dataOut, "", -1, true);
-                        int gotType = Commands.getType(dataIn);
-                        Commands.readMessage(dataIn, gotType);
+//                        Commands.writeMessage(dataOut, "", -1, false);
+//                        int gotType = Commands.getType(dataIn);
+//                        Commands.readMessage(dataIn, gotType);
                         break;
                     }
 
-                    Commands.writeMessage(dataOut, toSend, 1, true);
+                    Commands.writeMessage(dataOut, toSend, 1, false);
                     System.out.println("sent " + toSend);
 
-                    Commands.getType(dataIn);
-                    String clientMessageEcho = Commands.readMessage(dataIn, type);
-                    System.out.println("received " + clientMessageEcho);
-
+                    if (dataIn.available() > 0) {
+                        Commands.getType(dataIn);
+                        String clientMessageEcho = Commands.readMessage(dataIn, type);
+                        System.out.println("received " + clientMessageEcho);
+                    }
                 }
 
             }
@@ -117,7 +116,7 @@ public class Client {
 
 
             }*/
-
+            sc.close();
         }
 
         System.out.println("finished");
