@@ -1,4 +1,7 @@
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -8,30 +11,45 @@ public class Client {
 
     public static void main(String[] args) throws Exception {
 
-        ClientOptions.welcome();
+        clientOptions clientOptions = new clientOptions();
+        clientOptions.welcome();
 
-        while (sc.hasNextLine()) {
+        while (sc.hasNextLine()) { //set from true to hasNextLine during merge conflict
             int chooseOption = Integer.parseInt(sc.next());
 
-            // LOG IN
-            if (chooseOption == 1) {
-                ClientOptions.login();
-                if (ClientOptions.loggedIn())
+            if (chooseOption == 1) {            // LOG IN
+                clientOptions.login();
+                if (clientOptions.loggedIn())
                     connectToServer();
                 else
-                    ClientOptions.welcome();
+                    clientOptions.welcome();
 
-            //CREATE NEW ACCOUNT
-            } else if (chooseOption == 2) {
-                ClientOptions.createNewAccount();
-                ClientOptions.login();
-                if (ClientOptions.loggedIn())
+            } else if (chooseOption == 2) {     //CREATE NEW ACCOUNT
+                clientOptions.createNewAccount();
+                clientOptions.login();
+                if (clientOptions.loggedIn())
                     connectToServer();
 
-            // EXIT THE PROGRAM
-            } else if (chooseOption == 5) {
-                ClientOptions.exit();
+            } else if (chooseOption == 3) {
+                //TODO Add options
                 break;
+
+            } else if (chooseOption == 4) {
+                //TODO Add options
+                break;
+
+            } else if (chooseOption == 5) {     // EXIT THE PROGRAM
+                clientOptions.exit();
+                break;
+
+            } else if (chooseOption == 6) {
+                //TODO Add options
+                break;
+
+            } else if (chooseOption == 7) {
+                //TODO Add options
+                break;
+
             }
         }
     }
@@ -53,9 +71,10 @@ public class Client {
 
             System.out.println("connected; sending data");
 
+
             if (type == 1) {
 
-                while (sc.hasNextLine()) {
+                while (sc.hasNextLine()) { //merge-conflict: was true
 
                     String toSend = sc.nextLine();
 
@@ -104,7 +123,7 @@ public class Client {
 
 
             }*/
-
+            sc.close();
         }
 
         System.out.println("finished");
