@@ -11,7 +11,7 @@ public class Client {
 
     public static void main(String[] args) throws Exception {
 
-        clientOptions clientOptions = new clientOptions();
+        ClientOptions clientOptions = new ClientOptions();
         clientOptions.welcome();
 
         while (sc.hasNextLine()) { //set from true to hasNextLine during merge conflict

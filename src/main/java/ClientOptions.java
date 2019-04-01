@@ -2,7 +2,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Scanner;
 
-public class clientOptions {
+public class ClientOptions {
     private boolean loggedin;
 //    final Argon2 argon2 = Argon2Factory.create();
 
