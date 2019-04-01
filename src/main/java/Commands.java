@@ -6,6 +6,14 @@ import java.nio.file.Paths;
 
 public class Commands {
 
+    static void writeEnd(DataOutputStream socketOut) throws Exception {
+        socketOut.writeInt(-1);
+    }
+
+    static void writeUpdateRequest(DataOutputStream socketOut) throws Exception {
+        socketOut.writeInt(5);
+    }
+
     static void writeMessage(DataOutputStream socketOut, String message, int messageType, boolean isRequest) throws Exception {
 
         if (isRequest) {
@@ -13,9 +21,6 @@ public class Commands {
             socketOut.writeUTF(message);
 
         } else {
-            if (messageType == -1) {
-                socketOut.writeInt(messageType);
-            }
             if (messageType == 1) {
                 socketOut.writeInt(messageType);
                 socketOut.writeUTF(message);
@@ -46,7 +51,7 @@ public class Commands {
 
     static String readMessage(DataInputStream socketIn, int type) throws Exception {
 
-        if (type == -1) {
+        if (type == -1 || type == 5) {
             return "";
         } else if (type == 1) {
             return processMessage1(socketIn);

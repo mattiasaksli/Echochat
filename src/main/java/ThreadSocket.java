@@ -1,14 +1,16 @@
 import java.io.*;
 import java.net.Socket;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 public class ThreadSocket implements Runnable {
 
     final Socket socket;
-    final Socket socket2;
+    ArrayBlockingQueue<String> messages;
 
-    public ThreadSocket(Socket ss, Socket ss2) {
+    public ThreadSocket(Socket ss, ArrayBlockingQueue<String> messages) {
         this.socket = ss;
-        this.socket2 = ss2;
+        this.messages = messages;
     }
 
     @Override
@@ -17,42 +19,40 @@ public class ThreadSocket implements Runnable {
              InputStream in = socket.getInputStream();
              DataInputStream dataIn = new DataInputStream(in);
              OutputStream out = socket.getOutputStream();
-             DataOutputStream dataOut = new DataOutputStream(out);
-             socket2;
-             InputStream in2 = socket2.getInputStream();
-             DataInputStream dataIn2 = new DataInputStream(in2);
-             OutputStream out2 = socket2.getOutputStream();
-             DataOutputStream dataOut2 = new DataOutputStream(out2)) {
+             DataOutputStream dataOut = new DataOutputStream(out)) {
+            System.out.println("client connected");
 
             while (true) {
 
-                System.out.println("client connected; waiting for a message");
                 int type = Commands.getType(dataIn);
-                int type2 = Commands.getType(dataIn2);
 
-                if (type == -1 || type2 == -1) {
+                if (type == -1) {
                     System.out.println("ending connection");
-                    Commands.writeMessage(dataOut, "", -1, false);
-                    Commands.writeMessage(dataOut2, "", -1, false);
                     break;
                 }
 
                 String clientMessage = Commands.readMessage(dataIn, type);
-                String clientMessage2 = Commands.readMessage(dataIn2, type);
+                System.out.println("message got through: " + messages.offer(clientMessage));
 
-                String combined = "\tClient1: '" + clientMessage;
-
-                if (type == 1 || type2 == 1) {
+                if (type == 1) {
                     System.out.println("received " + clientMessage);
-                    System.out.println("received " + clientMessage2);
+                }
 
-                    Commands.writeMessage(dataOut, combined, type, false);
-                    Commands.writeMessage(dataOut2, combined, type2, false);
+                if (type == 5) {
+
+                    String message = "";
+                    while (messages.peek() != null) {
+                        String savedmessage = messages.take();
+                        message = message.concat(savedmessage + "\n");
+                        System.out.print(message);
+                    }
+
+                    Commands.writeMessage(dataOut, message, 1, false);
                 }
             }
 
         } catch (Exception e) {
-            throw new RuntimeException();
+            e.printStackTrace(); //throw new runtimeerror
         }
     }
 }

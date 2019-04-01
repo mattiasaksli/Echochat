@@ -1,19 +1,17 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
 public class Client {
 
+    static Scanner sc = new Scanner(System.in);
+
     public static void main(String[] args) throws Exception {
 
         ClientOptions.welcome();
-        Scanner sc1 = new Scanner(System.in);
 
-        while (true) {
-            int chooseOption = Integer.parseInt(sc1.next());
+        while (sc.hasNextLine()) {
+            int chooseOption = Integer.parseInt(sc.next());
 
             // LOG IN
             if (chooseOption == 1) {
@@ -46,13 +44,14 @@ public class Client {
              DataOutputStream dataOut = new DataOutputStream(out);
              DataInputStream dataIn = new DataInputStream(in)) {
 
+            Thread update = new Thread(new Update(dataOut, dataIn));
+            update.start();
+
             //Path saveToPath;
             //int type = Integer.parseInt(args[0]);
             int type = 1;
 
             System.out.println("connected; sending data");
-
-            Scanner sc = new Scanner(System.in);
 
             if (type == 1) {
 
@@ -61,18 +60,21 @@ public class Client {
                     String toSend = sc.nextLine();
 
                     if ((toSend.equals("END"))) {
-                        Commands.writeMessage(dataOut, "", -1, true);
-                        int gotType = Commands.getType(dataIn);
-                        Commands.readMessage(dataIn, gotType);
+                        Commands.writeEnd(dataOut);
                         break;
-                    }
 
-                    Commands.writeMessage(dataOut, toSend, 1, true);
-                    System.out.println("sent " + toSend);
+                    } /*else if ((toSend.equals("update"))) {
+                        Commands.writeUpdateRequest(dataOut);
+                        int gotType = Commands.getType(dataIn);
+                        String message = Commands.readMessage(dataIn, gotType);
+                        System.out.print(message);
+                    }*/
 
-                    Commands.getType(dataIn);
-                    String clientMessageEcho = Commands.readMessage(dataIn, type);
-                    System.out.println("received " + clientMessageEcho);
+                    Commands.writeMessage(dataOut, toSend, type, true);
+
+                    //Commands.getType(dataIn);
+                    //String clientMessageEcho = Commands.readMessage(dataIn, type);
+                    //System.out.println("received " + message);
 
                 }
 
