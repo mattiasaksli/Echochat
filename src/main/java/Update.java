@@ -1,5 +1,6 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.net.SocketException;
 
 
 public class Update implements Runnable {
@@ -21,11 +22,15 @@ public class Update implements Runnable {
                 Commands.writeUpdateRequest(dataOut);
                 int gotType = Commands.getType(dataIn);
                 String message = Commands.readMessage(dataIn, gotType);
-                if (message.equals("\n")) {
+                message = message.trim();
+                if (message.equals("")) {
 
                 } else {
-                    System.out.print(message);
+                    System.out.print(message + "\n");
                 }
+            } catch (SocketException e) {
+                System.out.println("Connection terminated");
+                break;
             } catch (Exception e) {
                 throw new RuntimeException();
             }

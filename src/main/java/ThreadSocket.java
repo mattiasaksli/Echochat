@@ -52,7 +52,7 @@ public class ThreadSocket implements Runnable {
             }
 
         } catch (Exception e) {
-            e.printStackTrace(); //throw new runtimeerror
+            throw new RuntimeException();
         }
     }
 }
