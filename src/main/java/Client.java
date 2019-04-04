@@ -7,56 +7,16 @@ import java.util.Scanner;
 
 public class Client {
 
-    static Scanner sc = new Scanner(System.in);
-
     public static void main(String[] args) throws Exception {
-
         ClientOptions clientOptions = new ClientOptions();
-        clientOptions.welcome();
+        whatWouldYouLikeToDo(clientOptions);
 
-        while (sc.hasNextLine()) { //set from true to hasNextLine during merge conflict
-            int chooseOption = Integer.parseInt(sc.next());
-
-            if (chooseOption == 1) {            // LOG IN
-                clientOptions.login();
-                if (clientOptions.loggedIn())
-                    connectToServer();
-                else
-                    clientOptions.welcome();
-
-            } else if (chooseOption == 2) {     //CREATE NEW ACCOUNT
-                clientOptions.createNewAccount();
-                clientOptions.login();
-                if (clientOptions.loggedIn())
-                    connectToServer();
-
-            } else if (chooseOption == 3) {
-                //TODO Add options
-                break;
-
-            } else if (chooseOption == 4) {
-                //TODO Add options
-                break;
-
-            } else if (chooseOption == 5) {     // EXIT THE PROGRAM
-                clientOptions.exit();
-                break;
-
-            } else if (chooseOption == 6) {
-                //TODO Add options
-                break;
-
-            } else if (chooseOption == 7) {
-                //TODO Add options
-                break;
-
-            }
-        }
     }
 
-    private static void connectToServer() throws Exception {
-        System.out.println("connecting to server");
-        try (Socket socket = new Socket("localhost", 1337);
+    private static void connectToServer(String host) throws Exception {
+        System.out.println("connecting to the awesome server");
+
+        try (Socket socket = new Socket(host, 1337);
              OutputStream out = socket.getOutputStream();
              InputStream in = socket.getInputStream();
              DataOutputStream dataOut = new DataOutputStream(out);
@@ -71,12 +31,13 @@ public class Client {
 
             System.out.println("connected; sending data");
 
+            Scanner sc = new Scanner(System.in);
 
             if (type == 1) {
 
-                while (sc.hasNextLine()) { //merge-conflict: was true
+                while (sc.hasNext()) { //merge-conflict: was true
 
-                    String toSend = sc.nextLine();
+                    String toSend = sc.next();
 
                     if ((toSend.equals("END"))) {
                         Commands.writeEnd(dataOut);
@@ -123,12 +84,80 @@ public class Client {
 
 
             }*/
-            sc.close();
         }
 
         System.out.println("finished");
         System.out.println();
 
     }
+
+    private static void whatWouldYouLikeToDo(ClientOptions clientOptions) throws Exception {
+
+        int chosenOption;
+        Scanner sc1 = new Scanner(System.in);
+        clientOptions.welcome();
+
+        try {
+            if (sc1.hasNext()) {
+                chosenOption = Integer.parseInt(sc1.next());
+                if (chosenOption == 1) {
+                    optionLogin(clientOptions);
+                } else if (chosenOption == 2) {
+                    optionCreateNewAccount(clientOptions);
+                } else if (chosenOption == 3) {
+                    optionConnectToLocal(clientOptions);
+                } else if (chosenOption == 4) {
+                    optionConnectToEC2(clientOptions);
+                } else if (chosenOption == 5) {
+                    optionExit(clientOptions);
+                } else if (chosenOption == 6) {
+                    //TODO Add options
+                } else if (chosenOption == 7) {
+                    //TODO Add options
+                }
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("What would you like to do?");
+        }
+    }
+
+    private static void optionConnectToEC2(ClientOptions clientOptions) throws Exception {
+        if (clientOptions.loggedIn())
+            connectToServer("3.17.78.222");
+        else{
+            System.out.println("You must be logged in first!");
+            whatWouldYouLikeToDo(clientOptions);
+        }
+    }
+
+    private static void optionConnectToLocal(ClientOptions clientOptions) throws Exception {
+        if (clientOptions.loggedIn())
+        connectToServer("localhost");
+        else{
+            System.out.println("You must be logged in first!");
+            whatWouldYouLikeToDo(clientOptions);
+        }
+
+    }
+
+    private static void optionExit(ClientOptions clientOptions) {
+        clientOptions.exit();
+    }
+
+    private static void optionCreateNewAccount(ClientOptions clientOptions) throws Exception {
+        clientOptions.createNewAccount();
+        clientOptions.login();
+        whatWouldYouLikeToDo(clientOptions);
+    }
+
+    private static void optionLogin(ClientOptions clientOptions) throws Exception {
+        clientOptions.login();
+        if (clientOptions.loggedIn()) {
+            whatWouldYouLikeToDo(clientOptions);
+        } else
+            whatWouldYouLikeToDo(clientOptions);
+    }
+
+
 
 }
