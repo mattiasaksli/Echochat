@@ -6,9 +6,9 @@ class ClientOptions {
     void login() {
         Scanner sc = new Scanner(System.in);
         System.out.println("Log into your account!");
-
+        System.out.println("Enter your username: ");
         if (sc.hasNext()) {
-            System.out.println("Enter your username: ");
+
             String username = sc.next();
             System.out.println("Enter your password: ");
             String password = sc.next();

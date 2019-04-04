@@ -124,7 +124,7 @@ public class Client {
     private static void optionConnectToEC2(ClientOptions clientOptions) throws Exception {
         if (clientOptions.loggedIn())
             connectToServer("3.17.78.222");
-        else{
+        else {
             System.out.println("You must be logged in first!");
             whatWouldYouLikeToDo(clientOptions);
         }
@@ -132,8 +132,8 @@ public class Client {
 
     private static void optionConnectToLocal(ClientOptions clientOptions) throws Exception {
         if (clientOptions.loggedIn())
-        connectToServer("localhost");
-        else{
+            connectToServer("localhost");
+        else {
             System.out.println("You must be logged in first!");
             whatWouldYouLikeToDo(clientOptions);
         }
@@ -141,6 +141,7 @@ public class Client {
     }
 
     private static void optionExit(ClientOptions clientOptions) {
+
         clientOptions.exit();
     }
 
@@ -151,13 +152,14 @@ public class Client {
     }
 
     private static void optionLogin(ClientOptions clientOptions) throws Exception {
-        clientOptions.login();
         if (clientOptions.loggedIn()) {
+            System.out.println("You are already logged in!");
             whatWouldYouLikeToDo(clientOptions);
-        } else
+        } else {
+            clientOptions.login();
             whatWouldYouLikeToDo(clientOptions);
+        }
+
+
     }
-
-
-
 }
