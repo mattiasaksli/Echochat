@@ -1,8 +1,9 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.*;
 import java.net.Socket;
+import java.security.KeyStore;
 import java.util.Scanner;
 
 public class Client {
@@ -14,9 +15,23 @@ public class Client {
     }
 
     private static void connectToServer(String host) throws Exception {
+
+        int port = 1337;
+
         System.out.println("connecting to the awesome server");
 
-        try (Socket socket = new Socket(host, 1337);
+        File storeFile = new File("truststore.p12");
+        String storePass = "secret";
+
+        KeyStore store = KeyStore.getInstance(storeFile, storePass.toCharArray());
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(store);
+        TrustManager[] trustManagers = tmf.getTrustManagers();
+
+        SSLContext ctx = SSLContext.getInstance("TLS");
+        ctx.init(null, trustManagers, null);
+
+        try (Socket socket = ctx.getSocketFactory().createSocket(host, port);
              OutputStream out = socket.getOutputStream();
              InputStream in = socket.getInputStream();
              DataOutputStream dataOut = new DataOutputStream(out);
