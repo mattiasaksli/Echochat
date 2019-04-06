@@ -8,9 +8,9 @@ import java.util.Scanner;
 
 public class Client {
 
-    public static void main(String[] args) throws Exception {
+    private static ClientOptions clientOptions = new ClientOptions();
 
-        ClientOptions clientOptions = new ClientOptions();
+    public static void main(String[] args) throws Exception {
         whatWouldYouLikeToDo(clientOptions);
     }
 
@@ -39,14 +39,14 @@ public class Client {
              DataOutputStream dataOut = new DataOutputStream(out);
              DataInputStream dataIn = new DataInputStream(in)) {
 
-            Thread update = new Thread(new Update(dataOut, dataIn));
+            String username = clientOptions.getUsername();
+            Commands.writeUserToMap(dataOut, username);
+
+            Thread update = new Thread(new Update(dataOut, dataIn, username));
             update.start();
 
-            //Path saveToPath;
-            //int type = Integer.parseInt(args[0]);
             int type = 1;
-
-            System.out.println("connected; sending data");
+            System.out.println(username + " connected; sending data");
 
             Scanner sc = new Scanner(System.in);
 
@@ -54,29 +54,23 @@ public class Client {
 
                 while (sc.hasNext()) { //merge-conflict: was true
 
-                    String toSend = sc.next();
+                    String toSend = username + ": " + sc.nextLine();
 
                     if ((toSend.equals("END"))) {
                         Commands.writeEnd(dataOut);
                         break;
+                    }
 
-                    } /*else if ((toSend.equals("update"))) {
-                        Commands.writeUpdateRequest(dataOut);
-                        int gotType = Commands.getType(dataIn);
-                        String message = Commands.readMessage(dataIn, gotType);
-                        System.out.print(message);
-                    }*/
-
+                    Commands.messageAuthor(dataOut, username);
                     Commands.writeMessage(dataOut, toSend, type, true);
-
-                    //Commands.getType(dataIn);
-                    //String clientMessageEcho = Commands.readMessage(dataIn, type);
-                    //System.out.println("received " + message);
 
                 }
 
             }
-            /*else if (type == 2) {
+
+            /* TODO Repurpose the following when file-sending is to be implemented
+
+            else if (type == 2) {
                 String path = args[1];
                 saveToPath = Paths.get(args[2]);
 
@@ -104,8 +98,6 @@ public class Client {
         }
 
         System.out.println("finished");
-        System.out.println();
-
     }
 
     private static void whatWouldYouLikeToDo(ClientOptions clientOptions) throws Exception {
@@ -176,7 +168,6 @@ public class Client {
             clientOptions.login();
             whatWouldYouLikeToDo(clientOptions);
         }
-
-
     }
+
 }

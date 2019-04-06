@@ -5,7 +5,9 @@ import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyStore;
+import java.util.HashMap;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 public class Server {
 
@@ -13,7 +15,7 @@ public class Server {
 
         int port = 1337;
 
-        ArrayBlockingQueue<String> messages = new ArrayBlockingQueue<>(100);
+        HashMap<String, String> UserAndMessages = new HashMap<>();
 
         ClassLoader cl = Server.class.getClassLoader();
         InputStream keyIn = cl.getResourceAsStream("keystore.p12");
@@ -35,7 +37,7 @@ public class Server {
                 System.out.println("now listening on :" + port);
 
                 Socket socket = ss.accept();
-                Thread t1 = new Thread(new ThreadSocket(socket, messages));
+                Thread t1 = new Thread(new ThreadSocket(socket, UserAndMessages));
                 t1.start();
 
                 System.out.println("finished");

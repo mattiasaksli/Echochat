@@ -7,10 +7,12 @@ public class Update implements Runnable {
 
     DataOutputStream dataOut;
     DataInputStream dataIn;
+    String username;
 
-    public Update(DataOutputStream dataOut, DataInputStream dataIn) {
+    public Update(DataOutputStream dataOut, DataInputStream dataIn, String username) {
         this.dataOut = dataOut;
         this.dataIn = dataIn;
+        this.username = username;
     }
 
     @Override
@@ -18,7 +20,8 @@ public class Update implements Runnable {
 
         while (true) {
             try {
-                Thread.sleep(2000);
+                Thread.sleep(500);
+                Commands.messageAuthor(dataOut, username);
                 Commands.writeUpdateRequest(dataOut);
                 int gotType = Commands.getType(dataIn);
                 String message = Commands.readMessage(dataIn, gotType);
@@ -29,11 +32,12 @@ public class Update implements Runnable {
                     System.out.print(message + "\n");
                 }
             } catch (SocketException e) {
-                System.out.println("Connection terminated");
+                System.out.println("Connection terminated"); // TODO fix this.
                 break;
             } catch (Exception e) {
                 throw new RuntimeException();
             }
         }
     }
+
 }

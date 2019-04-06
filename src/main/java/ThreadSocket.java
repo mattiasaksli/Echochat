@@ -1,14 +1,15 @@
 import java.io.*;
 import java.net.Socket;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.HashMap;
 
 public class ThreadSocket implements Runnable {
 
+    String username;
+    String clientMessage;
     final Socket socket;
-    ArrayBlockingQueue<String> messages;
+    HashMap<String, String> messages;
 
-    public ThreadSocket(Socket ss, ArrayBlockingQueue<String> messages) {
+    public ThreadSocket(Socket ss, HashMap<String, String> messages) {
         this.socket = ss;
         this.messages = messages;
     }
@@ -26,26 +27,45 @@ public class ThreadSocket implements Runnable {
 
                 int type = Commands.getType(dataIn);
 
-                if (type == -1) {
+                if (Commands.isAuthorSignature(type)) {
+                    username = Commands.getUsername(dataIn);
+                    type = Commands.getType(dataIn);
+                }
+
+                clientMessage = Commands.readMessage(dataIn, type);
+
+                if (Commands.isEndRequest(type)) {
                     System.out.println("ending connection");
                     break;
                 }
 
-                String clientMessage = Commands.readMessage(dataIn, type);
-                System.out.println("message got through: " + messages.offer(clientMessage));
+                if (Commands.isUserMapping(type)) {
+                    messages.put(clientMessage, "");
+                    System.out.println(messages);
+                }
 
-                if (type == 1) {
+                if (Commands.isRegularMessage(type)) {
+
+                    for (String key : messages.keySet()) {
+                        if (username.equals(key)) {
+                        } else {
+                            messages.replace(key, clientMessage);
+                        }
+                    }
+
                     System.out.println("received " + clientMessage);
                 }
 
-                if (type == 5) {
+                if (Commands.isUpdateRequest(type)) {
 
                     String message = "";
-                    while (messages.peek() != null) {
-                        String savedmessage = messages.take();
-                        message = message.concat(savedmessage + "\n");
-                        System.out.print(message);
+
+                    if (!"".equals(messages.get(username))) {
+                        message = messages.get(username);
+                        messages.replace(username, "");
                     }
+
+                    System.out.print(message);
 
                     Commands.writeMessage(dataOut, message, 1, false);
                 }

@@ -2,6 +2,7 @@ import java.util.Scanner;
 
 class ClientOptions {
     private boolean loggedin;
+    private String username;
 
     void login() {
         Scanner sc = new Scanner(System.in);
@@ -9,7 +10,7 @@ class ClientOptions {
         System.out.println("Enter your username: ");
         if (sc.hasNext()) {
 
-            String username = sc.next();
+            username = sc.next();
             System.out.println("Enter your password: ");
             String password = sc.next();
 
@@ -78,5 +79,9 @@ class ClientOptions {
     void exit() {
         System.out.println("Bye-bye!");
         System.exit(0);
+    }
+
+    String getUsername() {
+        return username;
     }
 }

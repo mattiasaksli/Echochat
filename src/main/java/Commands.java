@@ -14,8 +14,17 @@ public class Commands {
         socketOut.writeInt(5);
     }
 
-    static void writeMessage(DataOutputStream socketOut, String message, int messageType, boolean isRequest) throws Exception {
+    static void writeUserToMap(DataOutputStream socketOut, String username) throws Exception {
+        socketOut.writeInt(6);
+        socketOut.writeUTF(username);
+    }
 
+    static void messageAuthor(DataOutputStream socketOut, String username) throws Exception {
+        socketOut.writeInt(7);
+        socketOut.writeUTF(username);
+    }
+
+    static void writeMessage(DataOutputStream socketOut, String message, int messageType, boolean isRequest) throws Exception {
         if (isRequest) {
             socketOut.writeInt(messageType);
             socketOut.writeUTF(message);
@@ -48,15 +57,18 @@ public class Commands {
     }
 
     static int getType(DataInputStream socketIn) throws Exception {
-        DataInputStream dis = new DataInputStream(socketIn);
-        return dis.readInt();
+        return socketIn.readInt();
+    }
+
+    static String getUsername(DataInputStream socketIn) throws Exception {
+        return socketIn.readUTF();
     }
 
     static String readMessage(DataInputStream socketIn, int type) throws Exception {
 
-        if (type == -1 || type == 5) {
+        if (type == -1 || type == 5 ) {
             return "";
-        } else if (type == 1) {
+        } else if (type == 1 || type == 6 || type == 7) {
             return processMessage1(socketIn);
         } else if (type == 2) {
             return processMessage2(socketIn);
@@ -97,5 +109,26 @@ public class Commands {
 
         return Files.readAllBytes(path);
     }
+
+    static boolean isEndRequest(int type) {
+        return type == -1;
+    }
+
+    static boolean isRegularMessage(int type) {
+        return type == 1;
+    }
+
+    static boolean isUpdateRequest(int type) {
+        return type == 5;
+    }
+
+    static boolean isUserMapping(int type) {
+        return type == 6;
+    }
+
+    static boolean isAuthorSignature(int type) {
+        return type == 7;
+    }
+
 
 }
