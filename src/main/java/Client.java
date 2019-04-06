@@ -9,9 +9,9 @@ import java.util.Scanner;
 public class Client {
 
     public static void main(String[] args) throws Exception {
+
         ClientOptions clientOptions = new ClientOptions();
         whatWouldYouLikeToDo(clientOptions);
-
     }
 
     private static void connectToServer(String host) throws Exception {
@@ -20,10 +20,12 @@ public class Client {
 
         System.out.println("connecting to the awesome server");
 
-        File storeFile = new File("truststore.p12");
+        ClassLoader cl = Client.class.getClassLoader();
+        InputStream keyIn = cl.getResourceAsStream("truststore.p12");
         String storePass = "secret";
 
-        KeyStore store = KeyStore.getInstance(storeFile, storePass.toCharArray());
+        KeyStore store = KeyStore.getInstance("PKCS12");
+        store.load(keyIn, storePass.toCharArray());
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(store);
         TrustManager[] trustManagers = tmf.getTrustManagers();

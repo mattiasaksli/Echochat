@@ -1,7 +1,7 @@
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import java.io.File;
+import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyStore;
@@ -15,10 +15,12 @@ public class Server {
 
         ArrayBlockingQueue<String> messages = new ArrayBlockingQueue<>(100);
 
-        File storeFile = new File("keystore.p12");
+        ClassLoader cl = Server.class.getClassLoader();
+        InputStream keyIn = cl.getResourceAsStream("keystore.p12");
         String storePass = "secret";
 
-        KeyStore store = KeyStore.getInstance(storeFile, storePass.toCharArray());
+        KeyStore store = KeyStore.getInstance("PKCS12");
+        store.load(keyIn, storePass.toCharArray());
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(store, storePass.toCharArray());
         KeyManager[] keyManagers = kmf.getKeyManagers();
@@ -36,13 +38,9 @@ public class Server {
                 Thread t1 = new Thread(new ThreadSocket(socket, messages));
                 t1.start();
 
-
                 System.out.println("finished");
                 System.out.println();
-
             }
-
         }
-
     }
 }
