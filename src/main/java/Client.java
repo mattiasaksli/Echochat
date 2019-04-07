@@ -9,11 +9,11 @@ import java.util.Scanner;
 public class Client {
 
     public static void main(String[] args) throws Exception {
-        ClientOptions clientOptions = new ClientOptions();
-        whatWouldYouLikeToDo(clientOptions);
+
+        whatWouldYouLikeToDo(new ClientOptions(), new Scanner(System.in));
     }
 
-    private static void connectToServer(String host, ClientOptions clientOptions) throws Exception {
+    private static void connectToServer(String host, ClientOptions clientOptions, Scanner sc) throws Exception {
 
         int port = 1337;
 
@@ -45,14 +45,13 @@ public class Client {
             Thread update = new Thread(new Update(dataOut, dataIn, username));
             update.start();
 
-            int type = 1;
+            int type = MessageTypes.TEXT.getValue();
+
             System.out.println(username + " connected; sending data");
 
-            Scanner sc = new Scanner(System.in);
+            if (type == MessageTypes.TEXT.getValue()) {
 
-            if (type == 1) {
-
-                while (sc.hasNext()) { //merge-conflict: was true
+                while (sc.hasNext()) {
 
                     String toSend = username + ": " + sc.nextLine();
 
@@ -63,88 +62,60 @@ public class Client {
 
                     Commands.messageAuthor(dataOut, username);
                     Commands.writeMessage(dataOut, toSend, type, true);
-
                 }
-
             }
-
-            /* TODO Repurpose the following when file-sending is to be implemented
-
-            else if (type == 2) {
-                String path = args[1];
-                saveToPath = Paths.get(args[2]);
-
-                Commands.writeMessage(dataOut, path, 2, true);
-
-                int checkType = Commands.getType(dataIn);
-
-                if (checkType == 3) {
-                    throw new IllegalArgumentException("error, server-relative path needed");
-
-                } else if (checkType == 2) {
-                    byte[] file = Commands.readFile(dataIn, checkType);
-                    Files.write(saveToPath, file);
-                    System.out.println("received" + saveToPath.toString());
-                    System.out.println("File size: \n" + new File(args[2]).length() + " bytes\n");
-                    System.out.println("File was written to: " + saveToPath);
-
-                } else {
-                    throw new IllegalArgumentException("error, could not find file");
-                }
-
-
-
-            }*/
+            //TODO implement file transferring
         }
-
         System.out.println("finished");
     }
 
-    private static void whatWouldYouLikeToDo(ClientOptions clientOptions) throws Exception {
+    private static void whatWouldYouLikeToDo(ClientOptions clientOptions, Scanner sc) throws Exception {
 
         int chosenOption;
-        Scanner sc1 = new Scanner(System.in);
         clientOptions.welcome();
 
         try {
-            if (sc1.hasNext()) {
-                chosenOption = Integer.parseInt(sc1.next());
-                if (chosenOption == 1) {
-                    optionLogin(clientOptions);
-                } else if (chosenOption == 2) {
-                    optionCreateNewAccount(clientOptions);
-                } else if (chosenOption == 3) {
-                    optionConnectToLocal(clientOptions);
-                } else if (chosenOption == 4) {
-                    optionConnectToEC2(clientOptions);
-                } else if (chosenOption == 5) {
-                    optionExit(clientOptions);
-                } else if (chosenOption == 6) {
-                    //TODO Add options
-                } else if (chosenOption == 7) {
-                    //TODO Add options
+            if (sc.hasNext()) {
+                chosenOption = Integer.parseInt(sc.next());
+                switch (chosenOption) {
+                    case 1:
+                        optionLogin(clientOptions, sc);
+                        break;
+                    case 2:
+                        optionCreateNewAccount(clientOptions, sc);
+                        break;
+                    case 3:
+                        optionConnectToLocal(clientOptions, sc);
+                        break;
+                    case 4:
+                        optionConnectToEC2(clientOptions, sc);
+                        break;
+                    case 5:
+                        optionExit(clientOptions);
+                        break;
                 }
             }
         } catch (NumberFormatException e) {
-            System.out.println("What would you like to do?");
+            System.out.println("\nInvalid input!\n");
+            whatWouldYouLikeToDo(clientOptions, sc);
         }
     }
 
-    private static void optionConnectToEC2(ClientOptions clientOptions) throws Exception {
+    private static void optionConnectToEC2(ClientOptions clientOptions, Scanner sc) throws Exception {
         if (clientOptions.loggedIn())
-            connectToServer("3.17.78.222", clientOptions);
+            connectToServer("3.17.78.222", clientOptions, sc);
         else {
             System.out.println("You must be logged in first!");
-            whatWouldYouLikeToDo(clientOptions);
+            whatWouldYouLikeToDo(clientOptions, sc);
         }
     }
 
-    private static void optionConnectToLocal(ClientOptions clientOptions) throws Exception {
+    private static void optionConnectToLocal(ClientOptions clientOptions, Scanner sc) throws Exception {
         if (clientOptions.loggedIn())
-            connectToServer("localhost", clientOptions);
+            connectToServer("localhost", clientOptions, sc);
         else {
             System.out.println("You must be logged in first!");
-            whatWouldYouLikeToDo(clientOptions);
+            whatWouldYouLikeToDo(clientOptions, sc);
         }
 
     }
@@ -154,19 +125,23 @@ public class Client {
         clientOptions.exit();
     }
 
-    private static void optionCreateNewAccount(ClientOptions clientOptions) throws Exception {
-        clientOptions.createNewAccount();
-        clientOptions.login();
-        whatWouldYouLikeToDo(clientOptions);
+    private static void optionCreateNewAccount(ClientOptions clientOptions, Scanner sc) throws Exception {
+        if (clientOptions.loggedIn()) {
+            System.out.println("You have already created an account!");
+            whatWouldYouLikeToDo(clientOptions, sc);
+        }
+        clientOptions.createNewAccount(sc);
+        clientOptions.login(sc);
+        whatWouldYouLikeToDo(clientOptions, sc);
     }
 
-    private static void optionLogin(ClientOptions clientOptions) throws Exception {
+    private static void optionLogin(ClientOptions clientOptions, Scanner sc) throws Exception {
         if (clientOptions.loggedIn()) {
             System.out.println("You are already logged in!");
-            whatWouldYouLikeToDo(clientOptions);
+            whatWouldYouLikeToDo(clientOptions, sc);
         } else {
-            clientOptions.login();
-            whatWouldYouLikeToDo(clientOptions);
+            clientOptions.login(sc);
+            whatWouldYouLikeToDo(clientOptions, sc);
         }
     }
 
