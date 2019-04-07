@@ -6,8 +6,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyStore;
 import java.util.HashMap;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 public class Server {
 
@@ -18,11 +16,12 @@ public class Server {
         HashMap<String, String> UserAndMessages = new HashMap<>();
 
         ClassLoader cl = Server.class.getClassLoader();
-        InputStream keyIn = cl.getResourceAsStream("keystore.p12");
         String storePass = "secret";
-
-        KeyStore store = KeyStore.getInstance("PKCS12");
-        store.load(keyIn, storePass.toCharArray());
+        KeyStore store;
+        try (InputStream keyIn = cl.getResourceAsStream("keystore.p12")) {
+            store = KeyStore.getInstance("PKCS12");
+            store.load(keyIn, storePass.toCharArray());
+        }
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(store, storePass.toCharArray());
         KeyManager[] keyManagers = kmf.getKeyManagers();

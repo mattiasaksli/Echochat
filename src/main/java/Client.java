@@ -21,11 +21,12 @@ public class Client {
         System.out.println("connecting to the awesome server");
 
         ClassLoader cl = Client.class.getClassLoader();
-        InputStream keyIn = cl.getResourceAsStream("truststore.p12");
         String storePass = "secret";
-
-        KeyStore store = KeyStore.getInstance("PKCS12");
-        store.load(keyIn, storePass.toCharArray());
+        KeyStore store;
+        try (InputStream keyIn = cl.getResourceAsStream("truststore.p12")) {
+            store = KeyStore.getInstance("PKCS12");
+            store.load(keyIn, storePass.toCharArray());
+        }
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(store);
         TrustManager[] trustManagers = tmf.getTrustManagers();
