@@ -13,7 +13,7 @@ public class Server {
 
         int port = 1337;
 
-        HashMap<String, String> UserAndMessages = new HashMap<>();
+        HashMap<String, String> userAndMessages = new HashMap<>();
 
         ClassLoader cl = Server.class.getClassLoader();
         String storePass = "secret";
@@ -36,7 +36,7 @@ public class Server {
                 System.out.println("now listening on :" + port);
 
                 Socket socket = ss.accept();
-                Thread t1 = new Thread(new ThreadSocket(socket, UserAndMessages));
+                Thread t1 = new Thread(new ThreadSocket(socket, userAndMessages));
                 t1.start();
 
                 System.out.println("finished");

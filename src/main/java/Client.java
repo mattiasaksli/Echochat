@@ -8,13 +8,12 @@ import java.util.Scanner;
 
 public class Client {
 
-    private static ClientOptions clientOptions = new ClientOptions();
-
     public static void main(String[] args) throws Exception {
+        ClientOptions clientOptions = new ClientOptions();
         whatWouldYouLikeToDo(clientOptions);
     }
 
-    private static void connectToServer(String host) throws Exception {
+    private static void connectToServer(String host, ClientOptions clientOptions) throws Exception {
 
         int port = 1337;
 
@@ -57,7 +56,7 @@ public class Client {
 
                     String toSend = username + ": " + sc.nextLine();
 
-                    if ((toSend.equals("END"))) {
+                    if ((toSend.equals(username + ": END"))) {
                         Commands.writeEnd(dataOut);
                         break;
                     }
@@ -133,7 +132,7 @@ public class Client {
 
     private static void optionConnectToEC2(ClientOptions clientOptions) throws Exception {
         if (clientOptions.loggedIn())
-            connectToServer("3.17.78.222");
+            connectToServer("3.17.78.222", clientOptions);
         else {
             System.out.println("You must be logged in first!");
             whatWouldYouLikeToDo(clientOptions);
@@ -142,7 +141,7 @@ public class Client {
 
     private static void optionConnectToLocal(ClientOptions clientOptions) throws Exception {
         if (clientOptions.loggedIn())
-            connectToServer("localhost");
+            connectToServer("localhost", clientOptions);
         else {
             System.out.println("You must be logged in first!");
             whatWouldYouLikeToDo(clientOptions);
