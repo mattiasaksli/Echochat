@@ -7,10 +7,13 @@ public enum MessageTypes {
     AUTHOR_SIGNATURE(7),
     REGISTRATION_REQ(100),
     REGISTRATION_SUCCESS(101),
-    REGISTRATION_FAIL(102),
+    REGISTRATION_WRONG_USERNAME(102),
+    REGISTRATION_WRONG_PASSWORD(103),
     LOGIN_REQ(200),
     LOGIN_SUCCESS(201),
-    LOGIN_FAIL(202);
+    LOGIN_WRONG_USERNAME(202),
+    LOGIN_WRONG_PASSWORD(203),
+    LOGIN_MISSING_DB(204);
 
     private int typeValue;
 
@@ -18,7 +21,7 @@ public enum MessageTypes {
         this.typeValue = typeValue;
     }
 
-    public int getValue() {
+    public int value() {
         return typeValue;
     }
 }

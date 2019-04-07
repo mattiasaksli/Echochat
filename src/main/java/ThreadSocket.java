@@ -7,6 +7,7 @@ public class ThreadSocket implements Runnable {
     private String username;
     private final Socket socket;
     private HashMap<String, String> messages;
+    private Commands commands = new Commands();
 
     ThreadSocket(Socket ss, HashMap<String, String> messages) {
         this.socket = ss;
@@ -24,26 +25,38 @@ public class ThreadSocket implements Runnable {
 
             while (true) {
 
-                int type = Commands.getType(dataIn);
+                int type = commands.getType(dataIn);
 
-                if (type == MessageTypes.AUTHOR_SIGNATURE.getValue()) {
-                    username = Commands.getUsername(dataIn);
-                    type = Commands.getType(dataIn);
+                if (type == MessageTypes.REGISTRATION_REQ.value()) {
+                    int response = commands.registerUser(dataIn);
+                    dataOut.writeInt(response);
+                    break;
                 }
 
-                String clientMessage = Commands.readMessage(dataIn, type);
+                if (type == MessageTypes.LOGIN_REQ.value()) {
+                    int response = commands.loginUser(dataIn);
+                    dataOut.writeInt(response);
+                    break;
+                }
 
-                if (type == MessageTypes.END_SESSION.getValue()) {
+                if (type == MessageTypes.AUTHOR_SIGNATURE.value()) {
+                    username = commands.getUsername(dataIn);
+                    type = commands.getType(dataIn);
+                }
+
+                String clientMessage = commands.readMessage(dataIn, type);
+
+                if (type == MessageTypes.END_SESSION.value()) {
                     System.out.println("ending connection");
                     break;
                 }
 
-                if (type == MessageTypes.USER_MAP.getValue()) {
+                if (type == MessageTypes.USER_MAP.value()) {
                     messages.put(clientMessage, "");
                     System.out.println(messages);
                 }
 
-                if (type == MessageTypes.TEXT.getValue()) {
+                if (type == MessageTypes.TEXT.value()) {
 
                     for (String key : messages.keySet()) {
                         if (username.equals(key)) {
@@ -55,7 +68,7 @@ public class ThreadSocket implements Runnable {
                     System.out.println("received " + clientMessage + "\n");
                 }
 
-                if (type == MessageTypes.UPDATE_REQ.getValue()) {
+                if (type == MessageTypes.UPDATE_REQ.value()) {
 
                     String message = "";
 
@@ -66,7 +79,7 @@ public class ThreadSocket implements Runnable {
 
                     System.out.print(message);
 
-                    Commands.writeMessage(dataOut, message, MessageTypes.TEXT.getValue(), false);
+                    commands.writeMessage(dataOut, message, MessageTypes.TEXT.value(), false);
                 }
             }
 

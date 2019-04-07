@@ -4,11 +4,12 @@ import java.net.SocketException;
 
 public class Update implements Runnable {
 
-    DataOutputStream dataOut;
-    DataInputStream dataIn;
-    String username;
+    private DataOutputStream dataOut;
+    private DataInputStream dataIn;
+    private String username;
+    private Commands commands = new Commands();
 
-    public Update(DataOutputStream dataOut, DataInputStream dataIn, String username) {
+    Update(DataOutputStream dataOut, DataInputStream dataIn, String username) {
         this.dataOut = dataOut;
         this.dataIn = dataIn;
         this.username = username;
@@ -20,10 +21,10 @@ public class Update implements Runnable {
         while (true) {
             try {
                 Thread.sleep(500);
-                Commands.messageAuthor(dataOut, username);
-                Commands.writeUpdateRequest(dataOut);
-                int gotType = Commands.getType(dataIn);
-                String message = Commands.readMessage(dataIn, gotType);
+                commands.messageAuthor(dataOut, username);
+                commands.writeUpdateRequest(dataOut);
+                int gotType = commands.getType(dataIn);
+                String message = commands.readMessage(dataIn, gotType);
                 message = message.trim();
                 if (message.equals("")) {
 

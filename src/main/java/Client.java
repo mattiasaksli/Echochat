@@ -8,16 +8,21 @@ import java.util.Scanner;
 
 public class Client {
 
+    private Commands commands = new Commands();
+
     public static void main(String[] args) throws Exception {
 
-        whatWouldYouLikeToDo(new ClientOptions(), new Scanner(System.in));
+        Client client = new Client();
+        client.whatWouldYouLikeToDo(new ClientOptions(), new Scanner(System.in));
     }
 
-    private static void connectToServer(String host, ClientOptions clientOptions, Scanner sc) throws Exception {
+    private void connectToServer(String host, ClientOptions clientOptions, Scanner sc) throws Exception {
 
         int port = 1337;
 
+        System.out.println("\n################################");
         System.out.println("connecting to the awesome server");
+        System.out.println("################################\n");
 
         ClassLoader cl = Client.class.getClassLoader();
         String storePass = "secret";
@@ -40,108 +45,108 @@ public class Client {
              DataInputStream dataIn = new DataInputStream(in)) {
 
             String username = clientOptions.getUsername();
-            Commands.writeUserToMap(dataOut, username);
+            commands.writeUserToMap(dataOut, username);
 
             Thread update = new Thread(new Update(dataOut, dataIn, username));
             update.start();
 
-            int type = MessageTypes.TEXT.getValue();
+            int type = MessageTypes.TEXT.value();
 
             System.out.println(username + " connected; sending data");
 
-            if (type == MessageTypes.TEXT.getValue()) {
+            if (type == MessageTypes.TEXT.value()) {
 
                 while (sc.hasNext()) {
 
                     String toSend = username + ": " + sc.nextLine();
 
                     if ((toSend.equals(username + ": END"))) {
-                        Commands.writeEnd(dataOut);
+                        commands.writeEnd(dataOut);
                         break;
                     }
 
-                    Commands.messageAuthor(dataOut, username);
-                    Commands.writeMessage(dataOut, toSend, type, true);
+                    commands.messageAuthor(dataOut, username);
+                    commands.writeMessage(dataOut, toSend, type, true);
                 }
             }
+
             //TODO implement file transferring
+
         }
         System.out.println("finished");
     }
 
-    private static void whatWouldYouLikeToDo(ClientOptions clientOptions, Scanner sc) throws Exception {
+    private void whatWouldYouLikeToDo(ClientOptions clientOptions, Scanner sc) throws Exception {
 
-        int chosenOption;
-        clientOptions.welcome();
+        int chosenOption = 0;
+        while (chosenOption != 5) {
 
-        try {
-            if (sc.hasNext()) {
-                chosenOption = Integer.parseInt(sc.next());
-                switch (chosenOption) {
-                    case 1:
-                        optionLogin(clientOptions, sc);
-                        break;
-                    case 2:
-                        optionCreateNewAccount(clientOptions, sc);
-                        break;
-                    case 3:
-                        optionConnectToLocal(clientOptions, sc);
-                        break;
-                    case 4:
-                        optionConnectToEC2(clientOptions, sc);
-                        break;
-                    case 5:
-                        optionExit(clientOptions);
-                        break;
+            clientOptions.welcome();
+
+            try {
+                if (sc.hasNext()) {
+                    chosenOption = Integer.parseInt(sc.next());
+                    switch (chosenOption) {
+                        case 1:
+                            optionLogin(clientOptions, sc);
+                            break;
+                        case 2:
+                            optionCreateNewAccount(clientOptions, sc);
+                            break;
+                        case 3:
+                            optionConnectToLocal(clientOptions, sc);
+                            break;
+                        case 4:
+                            optionConnectToEC2(clientOptions, sc);
+                            break;
+                        case 5:
+                            optionExit(clientOptions);
+                            break;
+                        default:
+                            System.out.println("\nPlease choose a valid option!\n");
+                    }
                 }
+            } catch (NumberFormatException e) {
+                System.out.println("\nInvalid input!\n");
             }
-        } catch (NumberFormatException e) {
-            System.out.println("\nInvalid input!\n");
-            whatWouldYouLikeToDo(clientOptions, sc);
         }
     }
 
-    private static void optionConnectToEC2(ClientOptions clientOptions, Scanner sc) throws Exception {
+    private void optionConnectToEC2(ClientOptions clientOptions, Scanner sc) throws Exception {
         if (clientOptions.loggedIn())
             connectToServer("3.17.78.222", clientOptions, sc);
         else {
             System.out.println("You must be logged in first!");
-            whatWouldYouLikeToDo(clientOptions, sc);
         }
     }
 
-    private static void optionConnectToLocal(ClientOptions clientOptions, Scanner sc) throws Exception {
+    private void optionConnectToLocal(ClientOptions clientOptions, Scanner sc) throws Exception {
         if (clientOptions.loggedIn())
             connectToServer("localhost", clientOptions, sc);
         else {
             System.out.println("You must be logged in first!");
-            whatWouldYouLikeToDo(clientOptions, sc);
         }
 
     }
 
-    private static void optionExit(ClientOptions clientOptions) {
-
+    private void optionExit(ClientOptions clientOptions) {
         clientOptions.exit();
     }
 
-    private static void optionCreateNewAccount(ClientOptions clientOptions, Scanner sc) throws Exception {
+    private void optionCreateNewAccount(ClientOptions clientOptions, Scanner sc) throws Exception {
         if (clientOptions.loggedIn()) {
             System.out.println("You have already created an account!");
-            whatWouldYouLikeToDo(clientOptions, sc);
         }
         clientOptions.createNewAccount(sc);
+        System.out.println("##############################");
         clientOptions.login(sc);
-        whatWouldYouLikeToDo(clientOptions, sc);
     }
 
-    private static void optionLogin(ClientOptions clientOptions, Scanner sc) throws Exception {
+    private void optionLogin(ClientOptions clientOptions, Scanner sc) throws Exception {
         if (clientOptions.loggedIn()) {
             System.out.println("You are already logged in!");
-            whatWouldYouLikeToDo(clientOptions, sc);
         } else {
             clientOptions.login(sc);
-            whatWouldYouLikeToDo(clientOptions, sc);
         }
     }
 

@@ -1,3 +1,12 @@
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.security.KeyStore;
 import java.util.Scanner;
 
 class ClientOptions {
@@ -25,65 +34,115 @@ class ClientOptions {
     }
 
     void createNewAccount(Scanner sc) throws Exception {
-        //TODO
-        // ADD ACCOUNT TO DATABASE
-        // add encryption to the password
 
-        System.out.println("Enter new username: ");
-        String newUsername = sc.next();
-        System.out.println("Enter new password: ");
-        String newPassword = sc.next();
+        System.out.println("Create a new account!");
 
-        int status = connectToServer(newUsername, newPassword, MessageTypes.REGISTRATION_REQ.getValue());
+        while (true) {
 
-        if (status == MessageTypes.REGISTRATION_SUCCESS.getValue()) {
-            System.out.println("Account created successfully!");
-        } else {
-            System.out.println("Something went wrong!");
+            System.out.println("Enter new username: ");
+            String newUsername = sc.next();
+            System.out.println("Enter new password: ");
+            String newPassword = sc.next();
+
+            int status = connectToServer(newUsername, newPassword, MessageTypes.REGISTRATION_REQ.value());
+
+            if (status == MessageTypes.REGISTRATION_SUCCESS.value()) {
+                System.out.println("Account created successfully!");
+                break;
+            } else {
+                if (status == MessageTypes.REGISTRATION_WRONG_USERNAME.value()) {
+                    System.out.println("\nThis username already exists!\n");
+                } else if (status == MessageTypes.REGISTRATION_WRONG_PASSWORD.value()) {
+                    System.out.println("\nPlease choose a different password!\n");
+                }
+                String tryAgainOption;
+                do {
+                    System.out.println("Would you like to try again?");
+                    System.out.println("(Y/N)");
+                    tryAgainOption = sc.next();
+                } while (!tryAgainOption.equals("N") && !tryAgainOption.equals("Y"));
+                if (tryAgainOption.equals("N")) {
+                    break;
+                }
+            }
         }
     }
 
     void login(Scanner sc) throws Exception {
+
         System.out.println("Log into your account!");
 
         while (!loggedin) {
 
             System.out.println("Enter your username: ");
 
-            if (sc.hasNext()) {
-                username = sc.next();
-                System.out.println("Enter your password: ");
-                String password = sc.next();
+            username = sc.next();
+            System.out.println("Enter your password: ");
+            String password = sc.next();
 
-                int status = connectToServer(username, password, MessageTypes.LOGIN_REQ.getValue());
+            int status = connectToServer(username, password, MessageTypes.LOGIN_REQ.value());
 
-                if (status == MessageTypes.LOGIN_SUCCESS.getValue()) {
-                    System.out.println("LOGIN SUCCESSFUL!");
-                    loggedin = true;
+            if (status == MessageTypes.LOGIN_SUCCESS.value()) {
+                System.out.println("LOGIN SUCCESSFUL!");
+                loggedin = true;
+                break;
+            } else {
+                if (status == MessageTypes.LOGIN_WRONG_USERNAME.value()) {
+                    System.out.println("\nUsername is incorrect!\n");
+                } else if (status == MessageTypes.LOGIN_WRONG_PASSWORD.value()) {
+                    System.out.println("\nPassword is incorrect!\n");
+                } else if (status == MessageTypes.LOGIN_MISSING_DB.value()) {
+                    System.out.println("\nRegister an account first!\n");
                     break;
-
-                } else {
-                    System.out.println("Username or password is incorrect!");
+                }
+                String tryAgainOption;
+                do {
                     System.out.println("Would you like to try again?");
-                    System.out.println("(YES/NO)");
-                    String tryAgainOption = sc.next();
-                    if (tryAgainOption.equals("NO")) {
-                        break;
-                    }
+                    System.out.println("(Y/N)");
+                    tryAgainOption = sc.next();
+                } while (!tryAgainOption.equals("N") && !tryAgainOption.equals("Y"));
+                if (tryAgainOption.equals("N")) {
+                    break;
                 }
             }
         }
     }
 
-    private int connectToServer(String username, String password, int type) throws Exception {
+    private int connectToServer(String userName, String passWord, int type) throws Exception {
 
+        int response;
 
+        String host = "localhost";
+        int port = 1337;
 
-        //RETURNING TRUE FOR TESTING PURPOSES
-        if (type == MessageTypes.REGISTRATION_REQ.getValue()) {
-            return MessageTypes.REGISTRATION_SUCCESS.getValue();
+        ClassLoader cl = Client.class.getClassLoader();
+        String storePass = "secret";
+        KeyStore store;
+        try (InputStream keyIn = cl.getResourceAsStream("truststore.p12")) {
+            store = KeyStore.getInstance("PKCS12");
+            store.load(keyIn, storePass.toCharArray());
         }
-        return MessageTypes.LOGIN_SUCCESS.getValue();
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(store);
+        TrustManager[] trustManagers = tmf.getTrustManagers();
+
+        SSLContext ctx = SSLContext.getInstance("TLS");
+        ctx.init(null, trustManagers, null);
+
+        try (Socket socket = ctx.getSocketFactory().createSocket(host, port);
+             OutputStream out = socket.getOutputStream();
+             InputStream in = socket.getInputStream();
+             DataOutputStream dataOut = new DataOutputStream(out);
+             DataInputStream dataIn = new DataInputStream(in)) {
+
+            dataOut.writeInt(type);
+            dataOut.writeUTF(userName);
+            dataOut.writeUTF(passWord);
+
+            response = dataIn.readInt();
+        }
+
+        return response;
     }
 
     boolean loggedIn() {
