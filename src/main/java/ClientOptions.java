@@ -22,6 +22,12 @@ class ClientOptions {
             System.out.println("Press 5 to exit!");
             System.out.println("//////////////////////////////");
         } else {
+            System.out.println("        __________     ______       ______                       ");
+            System.out.println("        ___  ____/________  /__________  /____________  _________");
+            System.out.println("        __  __/  _  ___/_  __ \\  __ \\_  __ \\  __ \\_  / / /_  ___/");
+            System.out.println("        _  /___  / /__ _  / / / /_/ /  /_/ / /_/ /  /_/ /_(__  ) ");
+            System.out.println("        /_____/  \\___/ /_/ /_/\\____//_.___/\\____/_\\__, / /____/  ");
+            System.out.println("                                                 /____/          ");
             System.out.println("//////////////////////////////");
             System.out.println("What would you like to do?");
             System.out.println("Press 1 to log in");
