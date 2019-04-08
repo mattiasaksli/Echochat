@@ -7,7 +7,6 @@ public class Update implements Runnable {
     private DataOutputStream dataOut;
     private DataInputStream dataIn;
     private String username;
-    private Commands commands = new Commands();
 
     Update(DataOutputStream dataOut, DataInputStream dataIn, String username) {
         this.dataOut = dataOut;
@@ -21,10 +20,10 @@ public class Update implements Runnable {
         while (true) {
             try {
                 Thread.sleep(500);
-                commands.messageAuthor(dataOut, username);
-                commands.writeUpdateRequest(dataOut);
-                int gotType = commands.getType(dataIn);
-                String message = commands.readMessage(dataIn, gotType);
+                Commands.messageAuthor(dataOut, username);
+                Commands.writeUpdateRequest(dataOut);
+                int gotType = Commands.getType(dataIn);
+                String message = Commands.readMessage(dataIn, gotType);
                 message = message.trim();
                 if (message.equals("")) {
 

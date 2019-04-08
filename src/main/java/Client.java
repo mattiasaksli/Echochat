@@ -8,8 +8,6 @@ import java.util.Scanner;
 
 public class Client {
 
-    private Commands commands = new Commands();
-
     public static void main(String[] args) throws Exception {
 
         Client client = new Client();
@@ -45,7 +43,7 @@ public class Client {
              DataInputStream dataIn = new DataInputStream(in)) {
 
             String username = clientOptions.getUsername();
-            commands.writeUserToMap(dataOut, username);
+            Commands.writeUserToMap(dataOut, username);
 
             Thread update = new Thread(new Update(dataOut, dataIn, username));
             update.start();
@@ -61,12 +59,12 @@ public class Client {
                     String toSend = username + ": " + sc.nextLine();
 
                     if ((toSend.equals(username + ": END"))) {
-                        commands.writeEnd(dataOut);
+                        Commands.writeEnd(dataOut);
                         break;
                     }
 
-                    commands.messageAuthor(dataOut, username);
-                    commands.writeMessage(dataOut, toSend, type, true);
+                    Commands.messageAuthor(dataOut, username);
+                    Commands.writeMessage(dataOut, toSend, type, true);
                 }
             }
 
