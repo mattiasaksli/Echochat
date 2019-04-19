@@ -19,14 +19,11 @@ public class ThreadSocket implements Runnable {
     private List<Chatroom> chatrooms;
     private final Socket socket;
     private final Argon2 argon2 = Argon2Factory.create();
-    private final String chatroomGiantMessage;
 
-
-    ThreadSocket(Socket ss, HashMap<String, Chatroom> messages, List<Chatroom> chatrooms, String chatroomGiantMessage) {
+    ThreadSocket(Socket ss, HashMap<String, Chatroom> messages, List<Chatroom> chatrooms) {
         this.socket = ss;
         this.messages = messages;
         this.chatrooms = chatrooms;
-        this.chatroomGiantMessage = chatroomGiantMessage;
     }
 
     private int registerUser(DataInputStream socketIn) throws IOException {
@@ -109,6 +106,15 @@ public class ThreadSocket implements Runnable {
                 if (type == MessageTypes.CHATROOM_SIGNATURE.value()) {
                     username = dataIn.readUTF();
                     String chatroomName = dataIn.readUTF();
+
+                    String chatroomGiantMessage = "";
+
+                    List<String> chatroomContents = Files.readAllLines(Path.of("C:\\Users\\Ingvar\\Desktop\\ECHOBOYS\\OOP_Messenger_Project\\chatrooms\\" + chatroomName + ".txt"));
+
+                    for (int i = 1; i < chatroomContents.size(); i++) {
+                        chatroomGiantMessage = chatroomGiantMessage + (chatroomContents.get(i)) + "\n";
+                    }
+
                     for (Chatroom chatroom : chatrooms) {
                         if (chatroom.getName().equals(chatroomName)) {
                             this.chatroom = chatroom;

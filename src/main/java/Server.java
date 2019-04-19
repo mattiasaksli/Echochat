@@ -19,7 +19,6 @@ public class Server {
         int port = 1337;
 
         List<Chatroom> chatrooms = new ArrayList<>();
-        String chatroomGiantMessage = "";
 
         File f = new File("C:\\Users\\Ingvar\\Desktop\\ECHOBOYS\\OOP_Messenger_Project\\chatrooms");
         ArrayList<File> files = new ArrayList<>(Arrays.asList(f.listFiles()));
@@ -27,9 +26,7 @@ public class Server {
         for (File file : files) {
             List<String> chatroomContents = Files.readAllLines(file.toPath());
             String chatroomName = chatroomContents.get(0);
-            for (int i = 1; i < chatroomContents.size(); i++) {
-                chatroomGiantMessage = chatroomGiantMessage + (chatroomContents.get(i)) + "\n";
-            }
+
             Chatroom chatroom = new Chatroom(chatroomName);
             chatrooms.add(chatroom);
         }
@@ -57,7 +54,7 @@ public class Server {
                 System.out.println("now listening on :" + port);
 
                 Socket socket = ss.accept();
-                Thread t1 = new Thread(new ThreadSocket(socket, userAndChatroom, chatrooms, chatroomGiantMessage));
+                Thread t1 = new Thread(new ThreadSocket(socket, userAndChatroom, chatrooms));
                 t1.start();
 
                 System.out.println("finished");
