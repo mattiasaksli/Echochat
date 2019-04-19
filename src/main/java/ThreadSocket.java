@@ -137,11 +137,11 @@ public class ThreadSocket implements Runnable {
 
                 if (type == MessageTypes.TEXT.value()) {
 
-                    for (String key : messages.keySet()) {
-                        if (username.equals(key)) {
+                    for (String key : chatroom.getUserAndMessages().keySet()) { //Username -> Chatroom; Chatroom(Username -> Message)
+                        if (key.equals(username)) {
                         } else {
-                            chatroom.addUserMessages(username, clientMessage);
-                            messages.replace(key, chatroom);
+                            chatroom.replaceUserMessages(key, clientMessage);
+                            //messages.replace(key, chatroom);
                         }
                     }
 

@@ -23,7 +23,7 @@ public class Update implements Runnable {
             try {
                 Thread.sleep(500);
                 //Commands.messageAuthor(dataOut, username);
-                Commands.writeChatroomName(dataOut, username, chatroomName);
+                Commands.messageAuthor(dataOut, username);
                 Commands.writeUpdateRequest(dataOut);
                 int gotType = Commands.getType(dataIn);
                 String message = Commands.readMessage(dataIn, gotType);

@@ -22,7 +22,7 @@ public class Server {
         String chatroomGiantMessage = "";
 
         File f = new File("C:\\Users\\Ingvar\\Desktop\\ECHOBOYS\\OOP_Messenger_Project\\chatrooms");
-        ArrayList<File> files = new ArrayList<File>(Arrays.asList(f.listFiles()));
+        ArrayList<File> files = new ArrayList<>(Arrays.asList(f.listFiles()));
 
         for (File file : files) {
             List<String> chatroomContents = Files.readAllLines(file.toPath());

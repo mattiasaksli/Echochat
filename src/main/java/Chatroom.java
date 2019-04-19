@@ -18,6 +18,10 @@ public class Chatroom {
         userAndMessages.put(key, value);
     }
 
+    public void replaceUserMessages(String key, String value) {
+        userAndMessages.replace(key, value);
+    }
+
     public String getName() {
         return name;
     }
