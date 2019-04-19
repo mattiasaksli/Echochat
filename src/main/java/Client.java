@@ -43,9 +43,16 @@ public class Client {
              DataInputStream dataIn = new DataInputStream(in)) {
 
             String username = clientOptions.getUsername();
-            Commands.writeUserToMap(dataOut, username);
 
-            Thread update = new Thread(new Update(dataOut, dataIn, username));
+            System.out.println("To which chatroom would you like to connect?");
+            // TODO List of chatroomNames to choose from
+            String chatroomName = sc.next();
+
+            Commands.writeChatroomName(dataOut, username, chatroomName);
+
+            /*Commands.writeUserToMap(dataOut, username);*/
+
+            Thread update = new Thread(new Update(dataOut, dataIn, username, chatroomName));
             update.start();
 
             int type = MessageTypes.TEXT.value();

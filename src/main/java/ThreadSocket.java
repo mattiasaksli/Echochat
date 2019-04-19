@@ -14,13 +14,19 @@ import java.util.List;
 public class ThreadSocket implements Runnable {
 
     private String username;
+    private Chatroom chatroom;
+    private HashMap<String, Chatroom> messages;
+    private List<Chatroom> chatrooms;
     private final Socket socket;
-    private HashMap<String, String> messages;
     private final Argon2 argon2 = Argon2Factory.create();
+    private final String chatroomGiantMessage;
 
-    ThreadSocket(Socket ss, HashMap<String, String> messages) {
+
+    ThreadSocket(Socket ss, HashMap<String, Chatroom> messages, List<Chatroom> chatrooms, String chatroomGiantMessage) {
         this.socket = ss;
         this.messages = messages;
+        this.chatrooms = chatrooms;
+        this.chatroomGiantMessage = chatroomGiantMessage;
     }
 
     private int registerUser(DataInputStream socketIn) throws IOException {
@@ -100,6 +106,18 @@ public class ThreadSocket implements Runnable {
                     break;
                 }
 
+                if (type == MessageTypes.CHATROOM_SIGNATURE.value()) {
+                    username = dataIn.readUTF();
+                    String chatroomName = dataIn.readUTF();
+                    for (Chatroom chatroom : chatrooms) {
+                        if (chatroom.getName().equals(chatroomName)) {
+                            this.chatroom = chatroom;
+                            messages.put(username, chatroom);
+                            messages.get(username).addUserMessages(username, chatroomGiantMessage);
+                        }
+                    }
+                }
+
                 if (type == MessageTypes.AUTHOR_SIGNATURE.value()) {
                     username = Commands.getUsername(dataIn);
                     type = Commands.getType(dataIn);
@@ -112,17 +130,18 @@ public class ThreadSocket implements Runnable {
                     break;
                 }
 
-                if (type == MessageTypes.USER_MAP.value()) {
-                    messages.put(clientMessage, "");
+                /*if (type == MessageTypes.USER_MAP.value()) {
+                    messages.put(username, chatroom);
                     System.out.println(messages);
-                }
+                }*/
 
                 if (type == MessageTypes.TEXT.value()) {
 
                     for (String key : messages.keySet()) {
                         if (username.equals(key)) {
                         } else {
-                            messages.replace(key, clientMessage);
+                            chatroom.addUserMessages(username, clientMessage);
+                            messages.replace(key, chatroom);
                         }
                     }
 
@@ -133,9 +152,9 @@ public class ThreadSocket implements Runnable {
 
                     String message = "";
 
-                    if (!"".equals(messages.get(username))) {
-                        message = messages.get(username);
-                        messages.replace(username, "");
+                    if (!messages.get(username).getUserAndMessages().get(username).equals("")) {
+                        message = messages.get(username).getUserAndMessages().get(username);
+                        messages.get(username).getUserAndMessages().replace(username, "");
                     }
 
                     System.out.print(message);
@@ -145,6 +164,7 @@ public class ThreadSocket implements Runnable {
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException();
         }
     }

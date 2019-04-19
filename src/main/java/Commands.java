@@ -11,6 +11,12 @@ class Commands {
         socketOut.writeInt(MessageTypes.UPDATE_REQ.value());
     }
 
+    static void writeChatroomName(DataOutputStream socketOut, String username, String chatroomName) throws Exception {
+        socketOut.writeInt(MessageTypes.CHATROOM_SIGNATURE.value());
+        socketOut.writeUTF(username);
+        socketOut.writeUTF(chatroomName);
+    }
+
     static void writeUserToMap(DataOutputStream socketOut, String username) throws Exception {
         socketOut.writeInt(MessageTypes.USER_MAP.value());
         socketOut.writeUTF(username);
@@ -44,7 +50,8 @@ class Commands {
     static String readMessage(DataInputStream socketIn, int type) throws Exception {
 
         if (type == MessageTypes.END_SESSION.value() ||
-                type == MessageTypes.UPDATE_REQ.value()) {
+                type == MessageTypes.UPDATE_REQ.value()||
+                type == MessageTypes.CHATROOM_SIGNATURE.value()) {
             return "";
         } else if (type == MessageTypes.TEXT.value() ||
                 type == MessageTypes.USER_MAP.value() ||
