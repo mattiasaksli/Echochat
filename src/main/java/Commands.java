@@ -24,11 +24,13 @@ class Commands {
     static void writeMessage(DataOutputStream socketOut, String message, int type, boolean isRequest) throws Exception {
         if (isRequest) {
             socketOut.writeInt(type);
-            socketOut.writeUTF(message);
+            socketOut.writeUTF(CurseFilter.replaceCurseWordsWithAsterisks(message));
+
         } else {
             if (type == MessageTypes.TEXT.value()) {
                 socketOut.writeInt(type);
-                socketOut.writeUTF(message);
+                socketOut.writeUTF(CurseFilter.replaceCurseWordsWithAsterisks(message));
+
             }
         }
     }
@@ -43,12 +45,9 @@ class Commands {
 
     static String readMessage(DataInputStream socketIn, int type) throws Exception {
 
-        if (type == MessageTypes.END_SESSION.value() ||
-                type == MessageTypes.UPDATE_REQ.value()) {
+        if (type == MessageTypes.END_SESSION.value() || type == MessageTypes.UPDATE_REQ.value()) {
             return "";
-        } else if (type == MessageTypes.TEXT.value() ||
-                type == MessageTypes.USER_MAP.value() ||
-                type == MessageTypes.AUTHOR_SIGNATURE.value()) {
+        } else if (type == MessageTypes.TEXT.value() || type == MessageTypes.USER_MAP.value() || type == MessageTypes.AUTHOR_SIGNATURE.value()) {
             return processMessage1(socketIn);
         } else {
             throw new IllegalArgumentException("type " + type);
