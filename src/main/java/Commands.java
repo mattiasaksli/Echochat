@@ -4,7 +4,7 @@ import java.io.DataOutputStream;
 class Commands {
 
     static void writeEnd(DataOutputStream socketOut) throws Exception {
-        socketOut.writeInt(MessageTypes.END_SESSION.value());
+        socketOut.writeInt(MessageTypes.EXIT_CHATROOM.value());
     }
 
     static void writeUpdateRequest(DataOutputStream socketOut) throws Exception {
@@ -50,7 +50,8 @@ class Commands {
     static String readMessage(DataInputStream socketIn, int type) throws Exception {
 
         if (type == MessageTypes.END_SESSION.value() ||
-                type == MessageTypes.UPDATE_REQ.value()||
+                type == MessageTypes.EXIT_CHATROOM.value() ||
+                type == MessageTypes.UPDATE_REQ.value() ||
                 type == MessageTypes.CHATROOM_SIGNATURE.value()) {
             return "";
         } else if (type == MessageTypes.TEXT.value() ||

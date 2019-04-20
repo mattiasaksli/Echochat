@@ -6,11 +6,8 @@ import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.KeyStore;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 public class Server {
 
@@ -20,8 +17,8 @@ public class Server {
 
         List<Chatroom> chatrooms = new ArrayList<>();
 
-        File f = new File("C:\\Users\\Ingvar\\Desktop\\ECHOBOYS\\OOP_Messenger_Project\\chatrooms");
-        ArrayList<File> files = new ArrayList<>(Arrays.asList(f.listFiles()));
+        File f = new File("chatrooms");
+        ArrayList<File> files = new ArrayList<>(Arrays.asList(Objects.requireNonNull(f.listFiles())));
 
         for (File file : files) {
             List<String> chatroomContents = Files.readAllLines(file.toPath());

@@ -9,7 +9,7 @@ public class Update implements Runnable {
     private String username;
     private String chatroomName;
 
-    public Update(DataOutputStream dataOut, DataInputStream dataIn, String username, String chatroomName) {
+    Update(DataOutputStream dataOut, DataInputStream dataIn, String username, String chatroomName) {
         this.dataOut = dataOut;
         this.dataIn = dataIn;
         this.username = username;
@@ -28,9 +28,7 @@ public class Update implements Runnable {
                 int gotType = Commands.getType(dataIn);
                 String message = Commands.readMessage(dataIn, gotType);
                 message = message.trim();
-                if (message.equals("")) {
-
-                } else {
+                if (!message.equals("")) {
                     System.out.print(message + "\n");
                 }
             } catch (SocketException e) {

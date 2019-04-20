@@ -3,6 +3,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.security.KeyStore;
 import java.util.Scanner;
 
@@ -10,81 +11,55 @@ public class Client {
 
     public static void main(String[] args) throws Exception {
 
-        Client client = new Client();
-        client.whatWouldYouLikeToDo(new ClientOptions(), new Scanner(System.in));
-    }
-
-    private void connectToServer(String host, ClientOptions clientOptions, Scanner sc) throws Exception {
-
         int port = 1337;
 
-        System.out.println("\n################################");
-        System.out.println("connecting to the awesome server");
-        System.out.println("################################\n");
+        Scanner sc = new Scanner(System.in);
+        String IP = null;
 
-        ClassLoader cl = Client.class.getClassLoader();
-        String storePass = "secret";
-        KeyStore store;
-        try (InputStream keyIn = cl.getResourceAsStream("truststore.p12")) {
-            store = KeyStore.getInstance("PKCS12");
-            store.load(keyIn, storePass.toCharArray());
-        }
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        tmf.init(store);
-        TrustManager[] trustManagers = tmf.getTrustManagers();
+        while (IP == null) {
 
-        SSLContext ctx = SSLContext.getInstance("TLS");
-        ctx.init(null, trustManagers, null);
+            System.out.println("Enter server IP:");
+            IP = sc.next();
 
-        try (Socket socket = ctx.getSocketFactory().createSocket(host, port);
-             OutputStream out = socket.getOutputStream();
-             InputStream in = socket.getInputStream();
-             DataOutputStream dataOut = new DataOutputStream(out);
-             DataInputStream dataIn = new DataInputStream(in)) {
+            System.out.println("\nConnecting to server...");
 
-            String username = clientOptions.getUsername();
-
-            System.out.println("To which chatroom would you like to connect?");
-            // TODO List of chatroomNames to choose from
-            String chatroomName = sc.next();
-
-            Commands.writeChatroomName(dataOut, username, chatroomName);
-
-            /*Commands.writeUserToMap(dataOut, username);*/
-
-            Thread update = new Thread(new Update(dataOut, dataIn, username, chatroomName));
-            update.start();
-
-            int type = MessageTypes.TEXT.value();
-
-            System.out.println(username + " connected; sending data");
-
-            if (type == MessageTypes.TEXT.value()) {
-
-                while (sc.hasNext()) {
-
-                    String toSend = username + ": " + sc.nextLine();
-
-                    if ((toSend.equals(username + ": END"))) {
-                        Commands.writeEnd(dataOut);
-                        break;
-                    }
-
-                    Commands.messageAuthor(dataOut, username);
-                    Commands.writeMessage(dataOut, toSend, type, true);
-                }
+            ClassLoader cl = Client.class.getClassLoader();
+            String storePass = "secret";
+            KeyStore store;
+            try (InputStream keyIn = cl.getResourceAsStream("truststore.p12")) {
+                store = KeyStore.getInstance("PKCS12");
+                store.load(keyIn, storePass.toCharArray());
             }
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(store);
+            TrustManager[] trustManagers = tmf.getTrustManagers();
 
-            //TODO implement file transferring
+            SSLContext ctx = SSLContext.getInstance("TLS");
+            ctx.init(null, trustManagers, null);
 
+            try (Socket socket = ctx.getSocketFactory().createSocket(IP, port);
+                 OutputStream out = socket.getOutputStream();
+                 InputStream in = socket.getInputStream();
+                 DataOutputStream dataOut = new DataOutputStream(out);
+                 DataInputStream dataIn = new DataInputStream(in)) {
+
+                System.out.println("\nConnected!\n");
+
+                Client client = new Client();
+                client.whatWouldYouLikeToDo(new ClientOptions(), sc, dataIn, dataOut);
+
+            } catch (SocketException s) {
+                System.out.println("\nWrong IP address!\n");
+                IP = null;
+            }
         }
-        System.out.println("finished");
     }
 
-    private void whatWouldYouLikeToDo(ClientOptions clientOptions, Scanner sc) throws Exception {
+    private void whatWouldYouLikeToDo(ClientOptions clientOptions, Scanner sc,
+                                      DataInputStream dataIn, DataOutputStream dataOut) throws Exception {
 
-        int chosenOption = 0;
-        while (chosenOption != 5) {
+        int chosenOption = -1;
+        while (chosenOption != 0) {
 
             clientOptions.welcome();
 
@@ -93,66 +68,62 @@ public class Client {
                     chosenOption = Integer.parseInt(sc.next());
                     switch (chosenOption) {
                         case 1:
-                            optionLogin(clientOptions, sc);
+                            optionLogin(clientOptions, sc, dataIn, dataOut);
                             break;
                         case 2:
-                            optionCreateNewAccount(clientOptions, sc);
+                            optionCreateNewAccount(clientOptions, sc, dataIn, dataOut);
                             break;
                         case 3:
-                            optionConnectToLocal(clientOptions, sc);
+                            optionChatroom(clientOptions, sc, dataIn, dataOut);
                             break;
-                        case 4:
-                            optionConnectToEC2(clientOptions, sc);
-                            break;
-                        case 5:
-                            optionExit(clientOptions);
+                        case 0:
+                            optionExit(dataOut);
                             break;
                         default:
                             System.out.println("\nPlease choose a valid option!\n");
                     }
                 }
             } catch (NumberFormatException e) {
-                System.out.println("\nInvalid input!\n");
+                System.out.println("\nPlease enter a number!\n");
             }
         }
     }
 
-    private void optionConnectToEC2(ClientOptions clientOptions, Scanner sc) throws Exception {
-        if (clientOptions.loggedIn())
-            connectToServer("3.17.78.222", clientOptions, sc);
-        else {
-            System.out.println("You must be logged in first!");
-        }
-    }
-
-    private void optionConnectToLocal(ClientOptions clientOptions, Scanner sc) throws Exception {
-        if (clientOptions.loggedIn())
-            connectToServer("localhost", clientOptions, sc);
-        else {
-            System.out.println("You must be logged in first!");
-        }
-
-    }
-
-    private void optionExit(ClientOptions clientOptions) {
-        clientOptions.exit();
-    }
-
-    private void optionCreateNewAccount(ClientOptions clientOptions, Scanner sc) throws Exception {
-        if (clientOptions.loggedIn()) {
-            System.out.println("You have already created an account!");
-        }
-        clientOptions.createNewAccount(sc);
-        System.out.println("##############################");
-        clientOptions.login(sc);
-    }
-
-    private void optionLogin(ClientOptions clientOptions, Scanner sc) throws Exception {
-        if (clientOptions.loggedIn()) {
-            System.out.println("You are already logged in!");
+    private void optionChatroom(ClientOptions clientOptions, Scanner sc,
+                                DataInputStream dataIn, DataOutputStream dataOut) throws Exception {
+        if (!clientOptions.loggedIn()) {
+            System.out.println("\nYou need to log in first!\n");
         } else {
-            clientOptions.login(sc);
+            clientOptions.connectToChatroom(clientOptions, sc, dataIn, dataOut);
         }
+    }
+
+    private void optionCreateNewAccount(ClientOptions clientOptions, Scanner sc,
+                                        DataInputStream dataIn, DataOutputStream dataOut) throws Exception {
+        if (clientOptions.loggedIn()) {
+            System.out.println("\nYou have already created an account!\n");
+        } else {
+            clientOptions.createNewAccount(sc, dataIn, dataOut);
+            if (clientOptions.isAccountCreated()) {
+                System.out.println("##############################\n");
+                clientOptions.login(sc, dataIn, dataOut);
+            }
+        }
+    }
+
+    private void optionLogin(ClientOptions clientOptions, Scanner sc,
+                             DataInputStream dataIn, DataOutputStream dataOut) throws Exception {
+        if (clientOptions.loggedIn()) {
+            System.out.println("\nYou are already logged in!\n");
+        } else {
+            clientOptions.login(sc, dataIn, dataOut);
+        }
+    }
+
+    private void optionExit(DataOutputStream dataOut) throws Exception {
+        System.out.println("Bye-bye!");
+        dataOut.writeInt(MessageTypes.END_SESSION.value());
+        System.exit(0);
     }
 
 }

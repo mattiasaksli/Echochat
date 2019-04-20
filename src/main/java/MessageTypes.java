@@ -1,6 +1,7 @@
 public enum MessageTypes {
 
-    END_SESSION(-1),
+    END_SESSION(-2),
+    EXIT_CHATROOM(-1),
     TEXT(1),
     UPDATE_REQ(5),
     USER_MAP(6),

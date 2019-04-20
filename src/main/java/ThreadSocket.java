@@ -94,32 +94,32 @@ public class ThreadSocket implements Runnable {
                 if (type == MessageTypes.REGISTRATION_REQ.value()) {
                     int response = registerUser(dataIn);
                     dataOut.writeInt(response);
-                    break;
+                    continue;
                 }
 
                 if (type == MessageTypes.LOGIN_REQ.value()) {
                     int response = loginUser(dataIn);
                     dataOut.writeInt(response);
-                    break;
+                    continue;
                 }
 
                 if (type == MessageTypes.CHATROOM_SIGNATURE.value()) {
                     username = dataIn.readUTF();
                     String chatroomName = dataIn.readUTF();
 
-                    String chatroomGiantMessage = "";
+                    StringBuilder chatroomGiantMessage = new StringBuilder();
 
-                    List<String> chatroomContents = Files.readAllLines(Path.of("C:\\Users\\Ingvar\\Desktop\\ECHOBOYS\\OOP_Messenger_Project\\chatrooms\\" + chatroomName + ".txt"));
+                    List<String> chatroomContents = Files.readAllLines(Path.of("chatrooms/" + chatroomName + ".txt"));
 
                     for (int i = 1; i < chatroomContents.size(); i++) {
-                        chatroomGiantMessage = chatroomGiantMessage + (chatroomContents.get(i)) + "\n";
+                        chatroomGiantMessage.append(chatroomContents.get(i)).append("\n");
                     }
 
                     for (Chatroom chatroom : chatrooms) {
                         if (chatroom.getName().equals(chatroomName)) {
                             this.chatroom = chatroom;
                             messages.put(username, chatroom);
-                            messages.get(username).addUserMessages(username, chatroomGiantMessage);
+                            messages.get(username).addUserMessages(username, chatroomGiantMessage.toString());
                         }
                     }
                 }
@@ -131,8 +131,12 @@ public class ThreadSocket implements Runnable {
 
                 String clientMessage = Commands.readMessage(dataIn, type);
 
+                if (type == MessageTypes.EXIT_CHATROOM.value()) {
+                    System.out.println("user " + username + " exited chatroom " + chatroom.getName());
+                    continue;
+                }
+
                 if (type == MessageTypes.END_SESSION.value()) {
-                    System.out.println("ending connection");
                     break;
                 }
 
@@ -144,14 +148,13 @@ public class ThreadSocket implements Runnable {
                 if (type == MessageTypes.TEXT.value()) {
 
                     for (String key : chatroom.getUserAndMessages().keySet()) { //Username -> Chatroom; Chatroom(Username -> Message)
-                        if (key.equals(username)) {
-                        } else {
+                        if (!key.equals(username)) {
                             chatroom.replaceUserMessages(key, clientMessage);
                             //messages.replace(key, chatroom);
                         }
                     }
 
-                    System.out.println("received " + clientMessage + "\n");
+                    System.out.println(chatroom.getName() + " received message from " + clientMessage + "\n");
                 }
 
                 if (type == MessageTypes.UPDATE_REQ.value()) {
@@ -173,5 +176,7 @@ public class ThreadSocket implements Runnable {
             e.printStackTrace();
             throw new RuntimeException();
         }
+
+        System.out.println("ended connection with user " + username + " at " + socket);
     }
 }

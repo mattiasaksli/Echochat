@@ -1,59 +1,57 @@
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.security.KeyStore;
+import java.io.IOException;
 import java.util.Scanner;
 
 class ClientOptions {
+    private boolean displayLogo = true;
     private boolean loggedin;
+    private boolean accountCreated;
     private String username;
 
     void welcome() {
         if (loggedin) {
             System.out.println("//////////////////////////////");
             System.out.println("What would you like to do?");
-            System.out.println("Press 3 to connect to localhost!");
-            System.out.println("Press 4 to connect to 3.17.78.222!");
-            System.out.println("Press 5 to exit!");
+            System.out.println("Press 3 to connect to a chatroom!");
+            System.out.println("Press 0 to exit!");
             System.out.println("//////////////////////////////");
         } else {
-            System.out.println("        __________     ______       ______                       ");
-            System.out.println("        ___  ____/________  /__________  /____________  _________");
-            System.out.println("        __  __/  _  ___/_  __ \\  __ \\_  __ \\  __ \\_  / / /_  ___/");
-            System.out.println("        _  /___  / /__ _  / / / /_/ /  /_/ / /_/ /  /_/ /_(__  ) ");
-            System.out.println("        /_____/  \\___/ /_/ /_/\\____//_.___/\\____/_\\__, / /____/  ");
-            System.out.println("                                                 /____/          ");
+            if (displayLogo) {
+                System.out.println("        __________     ______       ______                       ");
+                System.out.println("        ___  ____/________  /__________  /____________  _________");
+                System.out.println("        __  __/  _  ___/_  __ \\  __ \\_  __ \\  __ \\_  / / /_  ___/");
+                System.out.println("        _  /___  / /__ _  / / / /_/ /  /_/ / /_/ /  /_/ /_(__  ) ");
+                System.out.println("        /_____/  \\___/ /_/ /_/\\____//_.___/\\____/_\\__, / /____/  ");
+                System.out.println("                                                 /____/          ");
+                displayLogo = false;
+            }
             System.out.println("//////////////////////////////");
             System.out.println("What would you like to do?");
             System.out.println("Press 1 to log in");
             System.out.println("Press 2 to create new account!");
-            System.out.println("Press 3 to connect to localhost!");
-            System.out.println("Press 4 to connect to 3.17.78.222!");
-            System.out.println("Press 5 to exit!");
+            System.out.println("Press 0 to exit!");
             System.out.println("//////////////////////////////");
         }
     }
 
-    void createNewAccount(Scanner sc) throws Exception {
-
-        System.out.println("Create a new account!");
+    void createNewAccount(Scanner sc, DataInputStream dataIn, DataOutputStream dataOut) throws Exception {
 
         while (true) {
+
+            System.out.println("Create a new account!\n");
 
             System.out.println("Enter new username: ");
             String newUsername = sc.next();
             System.out.println("Enter new password: ");
             String newPassword = sc.next();
 
-            int status = connectToServer(newUsername, newPassword, MessageTypes.REGISTRATION_REQ.value());
+            int type = MessageTypes.REGISTRATION_REQ.value();
+            int status = sendUserInfo(dataIn, dataOut, type, newUsername, newPassword);
 
             if (status == MessageTypes.REGISTRATION_SUCCESS.value()) {
-                System.out.println("Account created successfully!");
+                System.out.println("\nAccount created successfully!\n");
+                accountCreated = true;
                 break;
             } else {
                 if (status == MessageTypes.REGISTRATION_WRONG_USERNAME.value()) {
@@ -61,36 +59,32 @@ class ClientOptions {
                 } else if (status == MessageTypes.REGISTRATION_WRONG_PASSWORD.value()) {
                     System.out.println("\nPlease choose a different password!\n");
                 }
-                String tryAgainOption;
-                do {
-                    System.out.println("Would you like to try again?");
-                    System.out.println("(Y/N)");
-                    tryAgainOption = sc.next();
-                } while (!tryAgainOption.equals("N") && !tryAgainOption.equals("Y"));
-                if (tryAgainOption.equals("N")) {
+                if (dontTryAgain(sc)) {
                     break;
                 }
             }
         }
     }
 
-    void login(Scanner sc) throws Exception {
-
-        System.out.println("Log into your account!");
+    void login(Scanner sc, DataInputStream dataIn, DataOutputStream dataOut) throws Exception {
 
         while (!loggedin) {
 
+            System.out.println("Log into your account!\n");
+
             System.out.println("Enter your username: ");
+            this.username = sc.next();
 
-            username = sc.next();
             System.out.println("Enter your password: ");
-            String password = sc.next();
+            String passWord = sc.next();
 
-            int status = connectToServer(username, password, MessageTypes.LOGIN_REQ.value());
+            int type = MessageTypes.LOGIN_REQ.value();
+            int status = sendUserInfo(dataIn, dataOut, type, username, passWord);
 
             if (status == MessageTypes.LOGIN_SUCCESS.value()) {
-                System.out.println("LOGIN SUCCESSFUL!");
+                System.out.println("\nLogin successful!\n");
                 loggedin = true;
+                accountCreated = true;
                 break;
             } else {
                 if (status == MessageTypes.LOGIN_WRONG_USERNAME.value()) {
@@ -101,66 +95,85 @@ class ClientOptions {
                     System.out.println("\nRegister an account first!\n");
                     break;
                 }
-                String tryAgainOption;
-                do {
-                    System.out.println("Would you like to try again?");
-                    System.out.println("(Y/N)");
-                    tryAgainOption = sc.next();
-                } while (!tryAgainOption.equals("N") && !tryAgainOption.equals("Y"));
-                if (tryAgainOption.equals("N")) {
+                if (dontTryAgain(sc)) {
                     break;
                 }
             }
         }
     }
 
-    private int connectToServer(String userName, String passWord, int type) throws Exception {
+    private int sendUserInfo(DataInputStream dataIn, DataOutputStream dataOut, int type, String userName, String passWord) throws IOException {
+        dataOut.writeInt(type);
+        dataOut.writeUTF(userName);
+        dataOut.writeUTF(passWord);
 
-        int response;
+        return dataIn.readInt();
+    }
 
-        String host = "localhost";
-        int port = 1337;
+    private boolean dontTryAgain(Scanner sc) {
+        String tryAgainOption;
+        do {
+            System.out.println("Would you like to try again?");
+            System.out.println("(Y/N)");
+            tryAgainOption = sc.next();
+        } while (!tryAgainOption.equals("N") && !tryAgainOption.equals("Y"));
+        return tryAgainOption.equals("N");
+    }
 
-        ClassLoader cl = Client.class.getClassLoader();
-        String storePass = "secret";
-        KeyStore store;
-        try (InputStream keyIn = cl.getResourceAsStream("truststore.p12")) {
-            store = KeyStore.getInstance("PKCS12");
-            store.load(keyIn, storePass.toCharArray());
+    void connectToChatroom(ClientOptions clientOptions, Scanner sc,
+                           DataInputStream dataIn, DataOutputStream dataOut) throws Exception {
+
+        String username = clientOptions.getUsername();
+
+        System.out.println("\nTo which chatroom would you like to connect?");
+
+        // TODO List of chatroomNames to choose from
+
+        String chatroomName = sc.next();
+
+        Commands.writeChatroomName(dataOut, username, chatroomName);
+
+        /*Commands.writeUserToMap(dataOut, username);*/
+
+        Thread update = new Thread(new Update(dataOut, dataIn, username, chatroomName));
+        update.start();
+
+        int type = MessageTypes.TEXT.value();
+
+        System.out.println("\n" + username + " connected to " + chatroomName + "\n");
+
+        if (type == MessageTypes.TEXT.value()) {
+
+            while (sc.hasNext()) {
+
+                String input = sc.nextLine();
+                String toSend = username + ": " + input;
+
+                if (input.equals("END")) {
+                    Commands.writeEnd(dataOut);
+                    break;
+                }
+
+                Commands.messageAuthor(dataOut, username);
+                Commands.writeMessage(dataOut, toSend, type, true);
+            }
         }
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        tmf.init(store);
-        TrustManager[] trustManagers = tmf.getTrustManagers();
 
-        SSLContext ctx = SSLContext.getInstance("TLS");
-        ctx.init(null, trustManagers, null);
+        //TODO implement file transferring
 
-        try (Socket socket = ctx.getSocketFactory().createSocket(host, port);
-             OutputStream out = socket.getOutputStream();
-             InputStream in = socket.getInputStream();
-             DataOutputStream dataOut = new DataOutputStream(out);
-             DataInputStream dataIn = new DataInputStream(in)) {
 
-            dataOut.writeInt(type);
-            dataOut.writeUTF(userName);
-            dataOut.writeUTF(passWord);
-
-            response = dataIn.readInt();
-        }
-
-        return response;
+        System.out.println("\nExited chatroom\n");
     }
 
     boolean loggedIn() {
         return loggedin;
     }
 
-    String getUsername() {
+    private String getUsername() {
         return username;
     }
 
-    void exit() {
-        System.out.println("Bye-bye!");
-        System.exit(0);
+    boolean isAccountCreated() {
+        return accountCreated;
     }
 }
