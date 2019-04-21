@@ -1,21 +1,23 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 class ClientOptions {
     private boolean displayLogo = true;
-    private boolean loggedin;
+    private boolean loggedIn;
     private boolean accountCreated;
     private String username;
 
     void welcome() {
-        if (loggedin) {
-            System.out.println("//////////////////////////////");
+        if (loggedIn) {
+            System.out.println("///////////////////////////////////");
             System.out.println("What would you like to do?");
             System.out.println("Press 3 to connect to a chatroom!");
             System.out.println("Press 0 to exit!");
-            System.out.println("//////////////////////////////");
+            System.out.println("///////////////////////////////////");
         } else {
             if (displayLogo) {
                 System.out.println("        __________     ______       ______                       ");
@@ -26,18 +28,18 @@ class ClientOptions {
                 System.out.println("                                                 /____/          ");
                 displayLogo = false;
             }
-            System.out.println("//////////////////////////////");
+            System.out.println("///////////////////////////////////");
             System.out.println("What would you like to do?");
             System.out.println("Press 1 to log in");
             System.out.println("Press 2 to create new account!");
             System.out.println("Press 0 to exit!");
-            System.out.println("//////////////////////////////");
+            System.out.println("///////////////////////////////////");
         }
     }
 
     void createNewAccount(Scanner sc, DataInputStream dataIn, DataOutputStream dataOut) throws Exception {
 
-        while (true) {
+        while (!accountCreated) {
 
             System.out.println("Create a new account!\n");
 
@@ -68,7 +70,7 @@ class ClientOptions {
 
     void login(Scanner sc, DataInputStream dataIn, DataOutputStream dataOut) throws Exception {
 
-        while (!loggedin) {
+        while (!loggedIn) {
 
             System.out.println("Log into your account!\n");
 
@@ -83,7 +85,7 @@ class ClientOptions {
 
             if (status == MessageTypes.LOGIN_SUCCESS.value()) {
                 System.out.println("\nLogin successful!\n");
-                loggedin = true;
+                loggedIn = true;
                 accountCreated = true;
                 break;
             } else {
@@ -117,21 +119,77 @@ class ClientOptions {
             System.out.println("(Y/N)");
             tryAgainOption = sc.next();
         } while (!tryAgainOption.equals("N") && !tryAgainOption.equals("Y"));
+        System.out.println();
         return tryAgainOption.equals("N");
+    }
+
+    private List<String> getChatroomNames(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
+        dataOut.writeInt(MessageTypes.CHATROOMS_LIST_REQ.value());
+
+        int length = dataIn.readInt();
+        List<String> chatrooms = new ArrayList<>();
+        if (length != 0) {
+            for (int i = 0; i < length; i++) {
+                String chatroomName = dataIn.readUTF();
+                chatrooms.add(chatroomName);
+            }
+        }
+        dataOut.writeInt(MessageTypes.CHATROOMS_LIST_SUCCESS.value());
+
+        return chatrooms;
     }
 
     void connectToChatroom(ClientOptions clientOptions, Scanner sc,
                            DataInputStream dataIn, DataOutputStream dataOut) throws Exception {
 
+        List<String> chatrooms = getChatroomNames(dataIn, dataOut);
+
         String username = clientOptions.getUsername();
+        String chatroomName = "";
 
-        System.out.println("\nTo which chatroom would you like to connect?");
+        if (chatrooms.size() == 0) {
+            System.out.println("\nNo chatrooms available! Would you like to create one?");
+            String response = "";
+            while (!response.equals("Y") && !response.equals("N")) {
+                System.out.println("Y/N");
+                response = sc.next();
+            }
 
-        // TODO List of chatroomNames to choose from
+            if (response.equals("N")) {
+                return;
+            }
 
-        String chatroomName = sc.next();
+            chatroomName = createChatroom(sc);
+        }
+
+        while (chatroomName.equals("")) {
+
+            System.out.println("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            System.out.println("Please choose a chatroom from the list or create a new one (CREATE)!\n");
+            for (int i = 1; i <= chatrooms.size(); i++) {
+                System.out.println("* " + chatrooms.get(i - 1));
+            }
+
+            System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+
+            chatroomName = sc.next();
+
+            if (chatroomName.equals("CREATE")) {
+                chatroomName = createChatroom(sc);
+            } else if (!chatrooms.contains(chatroomName)) {
+                System.out.println("\nInvalid input!");
+                chatroomName = "";
+                if (dontTryAgain(sc)) {
+                    return;
+                }
+            }
+        }
 
         Commands.writeChatroomName(dataOut, username, chatroomName);
+
+        if (dataIn.readInt() == MessageTypes.CHATROOMS_USER_CONNECTED.value()) {
+            System.out.println("\n" + username + " connected to " + chatroomName + "!");
+        }
 
         /*Commands.writeUserToMap(dataOut, username);*/
 
@@ -140,7 +198,7 @@ class ClientOptions {
 
         int type = MessageTypes.TEXT.value();
 
-        System.out.println("\n" + username + " connected to " + chatroomName + "\n");
+        System.out.println("Start chatting!\n");
 
         if (type == MessageTypes.TEXT.value()) {
 
@@ -165,8 +223,22 @@ class ClientOptions {
         System.out.println("\nExited chatroom\n");
     }
 
+    private String createChatroom(Scanner sc) {
+        String chatroomName = "";
+        while (chatroomName.equals("")) {
+            System.out.println("\nPlease enter a chatroom name (no whitespace): ");
+            chatroomName = sc.next();
+
+            if (chatroomName.equals("CREATE")) {
+                System.out.println("\nThat is not a valid name!");
+                chatroomName = "";
+            }
+        }
+        return chatroomName;
+    }
+
     boolean loggedIn() {
-        return loggedin;
+        return loggedIn;
     }
 
     private String getUsername() {

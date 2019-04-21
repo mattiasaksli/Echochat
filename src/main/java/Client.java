@@ -1,7 +1,10 @@
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.security.KeyStore;
@@ -46,6 +49,7 @@ public class Client {
                 System.out.println("\nConnected!\n");
 
                 Client client = new Client();
+
                 client.whatWouldYouLikeToDo(new ClientOptions(), sc, dataIn, dataOut);
 
             } catch (SocketException s) {
