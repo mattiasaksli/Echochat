@@ -6,8 +6,10 @@ import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyStore;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Server {
 
@@ -17,18 +19,9 @@ public class Server {
 
         List<Chatroom> chatrooms = new ArrayList<>();
 
-        File f = new File("chatrooms");
-        ArrayList<File> files = new ArrayList<>(Arrays.asList(Objects.requireNonNull(f.listFiles())));
-
-        for (File file : files) {
-            List<String> chatroomContents = Files.readAllLines(file.toPath());
-            String chatroomName = chatroomContents.get(0);
-
-            Chatroom chatroom = new Chatroom(chatroomName);
-            chatrooms.add(chatroom);
+        if (!Files.exists(Path.of("chatrooms"))) {
+            new File("chatrooms").mkdir();
         }
-
-        HashMap<String, Chatroom> userAndChatroom = new HashMap<>();
 
         ClassLoader cl = Server.class.getClassLoader();
         String storePass = "secret";
@@ -51,7 +44,8 @@ public class Server {
                 System.out.println("now listening on :" + port);
 
                 Socket socket = ss.accept();
-                Thread t1 = new Thread(new ThreadSocket(socket, userAndChatroom, chatrooms));
+
+                Thread t1 = new Thread(new ThreadSocket(chatrooms, socket));
                 t1.start();
 
                 System.out.println("finished");
