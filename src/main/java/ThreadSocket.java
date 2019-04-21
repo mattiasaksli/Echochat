@@ -205,17 +205,11 @@ public class ThreadSocket implements Runnable {
                     break;
                 }
 
-                /*if (type == MessageTypes.USER_MAP.value()) {
-                    messages.put(username, chatroom);
-                    System.out.println(messages);
-                }*/
-
                 if (type == MessageTypes.TEXT.value()) {
 
                     for (String key : chatroom.getUserAndMessages().keySet()) { //Username -> Chatroom; Chatroom(Username -> Message)
                         if (!key.equals(username)) {
                             chatroom.replaceUserMessages(key, clientMessage);
-                            //messages.replace(key, chatroom);
                         }
                     }
 

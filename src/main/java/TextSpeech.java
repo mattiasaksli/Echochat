@@ -1,8 +1,5 @@
 import com.sun.speech.freetts.Voice;
 import com.sun.speech.freetts.VoiceManager;
-import com.sun.speech.freetts.VoiceDirectory;
-import com.sun.speech.freetts.en.us.cmu_time_awb.AlanVoiceDirectory;
-import com.sun.speech.freetts.en.us.cmu_us_kal.KevinVoiceDirectory;
 
 
 public class TextSpeech {

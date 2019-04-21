@@ -192,9 +192,7 @@ class ClientOptions {
             System.out.println("\n" + username + " connected to " + chatroomName + "!");
         }
 
-        /*Commands.writeUserToMap(dataOut, username);*/
-
-        Thread update = new Thread(new Update(dataOut, dataIn, username, chatroomName));
+        Thread update = new Thread(new Update(dataOut, dataIn, username));
         update.start();
 
         int type = MessageTypes.TEXT.value();
@@ -261,7 +259,7 @@ class ClientOptions {
         return accountCreated;
     }
 
-    public boolean getTtsState() {
+    boolean getTtsState() {
         return ttsState;
     }
 }
