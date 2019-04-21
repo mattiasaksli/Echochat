@@ -95,10 +95,8 @@ public class ThreadSocket implements Runnable {
     @Override
     public void run() {
         try (socket;
-             InputStream in = socket.getInputStream();
-             DataInputStream dataIn = new DataInputStream(in);
-             OutputStream out = socket.getOutputStream();
-             DataOutputStream dataOut = new DataOutputStream(out)) {
+             DataInputStream dataIn = new DataInputStream(socket.getInputStream());
+             DataOutputStream dataOut = new DataOutputStream(socket.getOutputStream())) {
             System.out.println("client connected");
 
             while (true) {
@@ -119,7 +117,10 @@ public class ThreadSocket implements Runnable {
 
                 if (type == MessageTypes.CHATROOMS_LIST_REQ.value()) {
                     File f = new File("chatrooms");
-                    ArrayList<File> files = new ArrayList<>(Arrays.asList(Objects.requireNonNull(f.listFiles())));
+                    var files = f.listFiles();
+                    if (files == null) {
+                        throw new IOException("failed to list " + f);
+                    }
 
                     List<String> FileChatroomNames = new ArrayList<>();
 
@@ -159,7 +160,7 @@ public class ThreadSocket implements Runnable {
                             this.chatroom = cr;
 
                             StringBuilder chatroomGiantMessage = new StringBuilder();
-                            List<String> chatroomContents = Files.readAllLines(Path.of("chatrooms/" + chatroomName + ".txt"));
+                            List<String> chatroomContents = Files.readAllLines(Path.of("chatrooms", chatroomName + ".txt"));
 
                             for (int i = 1; i < chatroomContents.size(); i++) {
                                 chatroomGiantMessage.append(chatroomContents.get(i)).append("\n");
@@ -172,7 +173,7 @@ public class ThreadSocket implements Runnable {
                     }
 
                     if (!isChatroomInList) {
-                        Path path = Path.of("chatrooms/" + chatroomName + ".txt");
+                        Path path = Path.of("chatrooms", chatroomName + ".txt");
                         Files.createFile(path);
 
                         Files.write(path, Collections.singletonList(chatroomName), StandardCharsets.UTF_8,
@@ -220,7 +221,7 @@ public class ThreadSocket implements Runnable {
 
                     String message = "";
 
-                    if (!chatroom.getUserAndMessages().get(username).equals("")) {
+                    if (!chatroom.getUserAndMessages().get(username).isEmpty()) {
                         message = chatroom.getUserAndMessages().get(username);
                         chatroom.getUserAndMessages().replace(username, "");
                     }

@@ -25,7 +25,7 @@ public class Update implements Runnable {
                 int gotType = Commands.getType(dataIn);
                 String message = Commands.readMessage(dataIn, gotType);
                 message = message.trim();
-                if (!message.equals("")) {
+                if (!message.isEmpty()) {
                     System.out.print(message + "\n");
                 }
             } catch (SocketException e) {
