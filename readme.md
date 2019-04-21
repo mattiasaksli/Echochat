@@ -2,7 +2,7 @@
 
 *Fancy list of functions:*  
 
-• Chat rooms (???)
+• Chat rooms ✔
 
 • Funktsionaalsus häälsõnumite saatmiseks  
 

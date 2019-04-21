@@ -7,20 +7,19 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class ThreadSocket implements Runnable {
 
     private String username;
+    private Chatroom chatroom;
+    private List<Chatroom> chatrooms;
     private final Socket socket;
-    private HashMap<String, String> messages;
     private final Argon2 argon2 = Argon2Factory.create();
 
-    ThreadSocket(Socket ss, HashMap<String, String> messages) {
+    ThreadSocket(List<Chatroom> chatrooms, Socket ss) {
+        this.chatrooms = chatrooms;
         this.socket = ss;
-        this.messages = messages;
     }
 
     private int registerUser(DataInputStream socketIn) throws IOException {
@@ -75,6 +74,19 @@ public class ThreadSocket implements Runnable {
         return MessageTypes.LOGIN_WRONG_USERNAME.value();
     }
 
+    private void sendChatroomNames(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
+        int length = chatrooms.size();
+        dataOut.writeInt(length);
+        if (length != 0) {
+            for (Chatroom cr : chatrooms) {
+                dataOut.writeUTF(cr.getName());
+            }
+        }
+        if (dataIn.readInt() == MessageTypes.CHATROOMS_LIST_SUCCESS.value()) {
+            System.out.println("successfully sent chatrooms list to " + socket);
+        }
+    }
+
     @Override
     public void run() {
         try (socket;
@@ -91,13 +103,85 @@ public class ThreadSocket implements Runnable {
                 if (type == MessageTypes.REGISTRATION_REQ.value()) {
                     int response = registerUser(dataIn);
                     dataOut.writeInt(response);
-                    break;
+                    continue;
                 }
 
                 if (type == MessageTypes.LOGIN_REQ.value()) {
                     int response = loginUser(dataIn);
                     dataOut.writeInt(response);
-                    break;
+                    continue;
+                }
+
+                if (type == MessageTypes.CHATROOMS_LIST_REQ.value()) {
+                    File f = new File("chatrooms");
+                    ArrayList<File> files = new ArrayList<>(Arrays.asList(Objects.requireNonNull(f.listFiles())));
+
+                    List<String> FileChatroomNames = new ArrayList<>();
+
+                    for (File file : files) {
+                        List<String> chatroomContents = Files.readAllLines(file.toPath());
+                        String chatroomName = chatroomContents.get(0);
+
+                        FileChatroomNames.add(chatroomName);
+
+                    }
+
+                    List<String> currentChatroomNames = new ArrayList<>();
+
+                    for (Chatroom cr : chatrooms) {
+                        currentChatroomNames.add(cr.getName());
+                    }
+
+                    for (String fileChatName : FileChatroomNames) {
+                        if (!currentChatroomNames.contains(fileChatName)) {
+                            Chatroom newChatroom = new Chatroom(fileChatName);
+                            chatrooms.add(newChatroom);
+                        }
+                    }
+
+                    sendChatroomNames(dataIn, dataOut);
+                    continue;
+                }
+
+                if (type == MessageTypes.CHATROOM_SIGNATURE.value()) {
+                    username = dataIn.readUTF();
+                    String chatroomName = dataIn.readUTF();
+
+                    boolean isChatroomInList = false;
+
+                    for (Chatroom cr : chatrooms) {
+                        if (cr.getName().equals(chatroomName)) {
+                            this.chatroom = cr;
+
+                            StringBuilder chatroomGiantMessage = new StringBuilder();
+                            List<String> chatroomContents = Files.readAllLines(Path.of("chatrooms/" + chatroomName + ".txt"));
+
+                            for (int i = 1; i < chatroomContents.size(); i++) {
+                                chatroomGiantMessage.append(chatroomContents.get(i)).append("\n");
+                            }
+
+                            chatroom.addUserMessages(username, chatroomGiantMessage.toString());
+                            isChatroomInList = true;
+                            break;
+                        }
+                    }
+
+                    if (!isChatroomInList) {
+                        Path path = Path.of("chatrooms/" + chatroomName + ".txt");
+                        Files.createFile(path);
+
+                        Files.write(path, Collections.singletonList(chatroomName), StandardCharsets.UTF_8,
+                                StandardOpenOption.APPEND);
+
+                        Chatroom cr = new Chatroom(chatroomName);
+                        this.chatroom = cr;
+                        chatrooms.add(cr);
+                        chatroom.addUserMessages(username, "");
+                    }
+
+                    dataOut.writeInt(MessageTypes.CHATROOMS_USER_CONNECTED.value());
+                    System.out.println("connected user " + username + " to chatroom " + chatroomName);
+                    continue;
                 }
 
                 if (type == MessageTypes.AUTHOR_SIGNATURE.value()) {
@@ -107,35 +191,39 @@ public class ThreadSocket implements Runnable {
 
                 String clientMessage = Commands.readMessage(dataIn, type);
 
+                if (type == MessageTypes.EXIT_CHATROOM.value()) {
+                    System.out.println("user " + username + " exited chatroom " + chatroom.getName());
+                    continue;
+                }
+
                 if (type == MessageTypes.END_SESSION.value()) {
-                    System.out.println("ending connection");
                     break;
                 }
 
-                if (type == MessageTypes.USER_MAP.value()) {
-                    messages.put(clientMessage, "");
+                /*if (type == MessageTypes.USER_MAP.value()) {
+                    messages.put(username, chatroom);
                     System.out.println(messages);
-                }
+                }*/
 
                 if (type == MessageTypes.TEXT.value()) {
 
-                    for (String key : messages.keySet()) {
-                        if (username.equals(key)) {
-                        } else {
-                            messages.replace(key, clientMessage);
+                    for (String key : chatroom.getUserAndMessages().keySet()) { //Username -> Chatroom; Chatroom(Username -> Message)
+                        if (!key.equals(username)) {
+                            chatroom.replaceUserMessages(key, clientMessage);
+                            //messages.replace(key, chatroom);
                         }
                     }
 
-                    System.out.println("received " + clientMessage + "\n");
+                    System.out.println(chatroom.getName() + " received message from " + clientMessage + "\n");
                 }
 
                 if (type == MessageTypes.UPDATE_REQ.value()) {
 
                     String message = "";
 
-                    if (!"".equals(messages.get(username))) {
-                        message = messages.get(username);
-                        messages.replace(username, "");
+                    if (!chatroom.getUserAndMessages().get(username).equals("")) {
+                        message = chatroom.getUserAndMessages().get(username);
+                        chatroom.getUserAndMessages().replace(username, "");
                     }
 
                     System.out.print(message);
@@ -147,5 +235,7 @@ public class ThreadSocket implements Runnable {
         } catch (Exception e) {
             throw new RuntimeException();
         }
+
+        System.out.println("ended connection with user " + username + " at " + socket);
     }
 }

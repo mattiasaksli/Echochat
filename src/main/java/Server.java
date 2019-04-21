@@ -1,11 +1,15 @@
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import java.io.File;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyStore;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Server {
 
@@ -13,7 +17,11 @@ public class Server {
 
         int port = 1337;
 
-        HashMap<String, String> userAndMessages = new HashMap<>();
+        List<Chatroom> chatrooms = new ArrayList<>();
+
+        if (!Files.exists(Path.of("chatrooms"))) {
+            new File("chatrooms").mkdir();
+        }
 
         ClassLoader cl = Server.class.getClassLoader();
         String storePass = "secret";
@@ -36,7 +44,8 @@ public class Server {
                 System.out.println("now listening on :" + port);
 
                 Socket socket = ss.accept();
-                Thread t1 = new Thread(new ThreadSocket(socket, userAndMessages));
+
+                Thread t1 = new Thread(new ThreadSocket(chatrooms, socket));
                 t1.start();
 
                 System.out.println("finished");
