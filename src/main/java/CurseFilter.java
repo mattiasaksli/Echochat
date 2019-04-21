@@ -9,6 +9,8 @@ public class CurseFilter {
 
 
     public static List<String> getCurseList() throws IOException {
+        System.out.print("test");
+        System.out.println(Path.of("swearwords.txt").toAbsolutePath());
         return Files.readAllLines(Path.of("swearwords.txt"));
     }
 

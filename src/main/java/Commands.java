@@ -25,7 +25,7 @@ class Commands {
     static void writeMessage(DataOutputStream socketOut, String message, int type, boolean isRequest) throws Exception {
         if (isRequest) {
             socketOut.writeInt(type);
-            socketOut.writeUTF(CurseFilter.replaceCurseWordsWithAsterisks(message));
+            socketOut.writeUTF(message);
 
         } else {
             if (type == MessageTypes.TEXT.value()) {
