@@ -4,7 +4,6 @@ public enum MessageTypes {
     EXIT_CHATROOM(-1),
     TEXT(1),
     UPDATE_REQ(5),
-    USER_MAP(6),
     AUTHOR_SIGNATURE(7),
     CHATROOMS_LIST_REQ(50),
     CHATROOM_SIGNATURE(51),

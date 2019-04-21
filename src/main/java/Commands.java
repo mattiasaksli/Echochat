@@ -52,7 +52,6 @@ class Commands {
                 type == MessageTypes.CHATROOM_SIGNATURE.value()) {
             return "";
         } else if (type == MessageTypes.TEXT.value() ||
-                type == MessageTypes.USER_MAP.value() ||
                 type == MessageTypes.AUTHOR_SIGNATURE.value()) {
             return processMessage1(socketIn);
         } else {

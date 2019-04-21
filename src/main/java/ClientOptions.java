@@ -1,6 +1,8 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -205,8 +207,11 @@ class ClientOptions {
 
             while (sc.hasNext()) {
 
-                String input = sc.nextLine();
-                String toSend = username + ": " + input;
+                String input = sc.nextLine().trim();
+
+                String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+                String toSend = "[" + time + "] " + username + ": " + input;
 
                 if (input.equals("END")) {
                     Commands.writeEnd(dataOut);

@@ -1,12 +1,15 @@
+import java.nio.file.Path;
 import java.util.HashMap;
 
 class Chatroom {
 
     private String name;
+    private Path path;
     private HashMap<String, String> userAndMessages = new HashMap<>();
 
-    Chatroom(String name) {
+    Chatroom(String name, Path path) {
         this.name = name;
+        this.path = path;
     }
 
     HashMap<String, String> getUserAndMessages() {
@@ -25,4 +28,7 @@ class Chatroom {
         return name;
     }
 
+    Path getPath() {
+        return path;
+    }
 }

@@ -140,7 +140,8 @@ public class ThreadSocket implements Runnable {
 
                     for (String fileChatName : FileChatroomNames) {
                         if (!currentChatroomNames.contains(fileChatName)) {
-                            Chatroom newChatroom = new Chatroom(fileChatName);
+                            Chatroom newChatroom = new Chatroom(fileChatName,
+                                    Path.of("chatrooms", fileChatName + ".txt"));
                             chatrooms.add(newChatroom);
                         }
                     }
@@ -179,7 +180,7 @@ public class ThreadSocket implements Runnable {
                         Files.write(path, Collections.singletonList(chatroomName), StandardCharsets.UTF_8,
                                 StandardOpenOption.APPEND);
 
-                        Chatroom cr = new Chatroom(chatroomName);
+                        Chatroom cr = new Chatroom(chatroomName, path);
                         this.chatroom = cr;
                         chatrooms.add(cr);
                         chatroom.addUserMessages(username, "");
@@ -213,6 +214,9 @@ public class ThreadSocket implements Runnable {
                             chatroom.replaceUserMessages(key, clientMessage);
                         }
                     }
+
+                    Files.write(chatroom.getPath(), Collections.singletonList(clientMessage), StandardCharsets.UTF_8,
+                            StandardOpenOption.APPEND);
 
                     System.out.println(chatroom.getName() + " received message from " + clientMessage + "\n");
                 }
