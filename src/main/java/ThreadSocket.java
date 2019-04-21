@@ -45,7 +45,7 @@ public class ThreadSocket implements Runnable {
         }
 
         Path path = Path.of("credentials.txt");
-        String newUser = userName + "\t" + hash;
+        String newUser = userName + "\t" + hash + "\t" + "true";
         Files.write(path, Collections.singletonList(newUser), StandardCharsets.UTF_8,
                 StandardOpenOption.APPEND);
         return MessageTypes.REGISTRATION_SUCCESS.value();
@@ -65,6 +65,7 @@ public class ThreadSocket implements Runnable {
             String[] split = credential.split("\t");
             if (userName.equals(split[0])) {
                 if (argon2.verify(split[1], passWord)) {
+                    //onlineStatusFromFalseToTrue(username);
                     return MessageTypes.LOGIN_SUCCESS.value();
                 } else {
                     return MessageTypes.LOGIN_WRONG_PASSWORD.value();
@@ -85,6 +86,10 @@ public class ThreadSocket implements Runnable {
         if (dataIn.readInt() == MessageTypes.CHATROOMS_LIST_SUCCESS.value()) {
             System.out.println("successfully sent chatrooms list to " + socket);
         }
+    }
+
+    private void exitUser() throws IOException {
+        onlineStatusFromTrueToFalse();
     }
 
     @Override
@@ -237,5 +242,41 @@ public class ThreadSocket implements Runnable {
         }
 
         System.out.println("ended connection with user " + username + " at " + socket);
+    }
+
+    private void onlineStatusFromFalseToTrue(String username) throws IOException {
+        Path path = Path.of("credentials.txt");
+        List<String> newCredentialsText = new ArrayList<>();
+        List<String> credentials = Files.readAllLines(path);
+
+        for (String credential : credentials) {
+            String[] split = credential.split("\t");
+            if (username.equals(split[0]))
+                newCredentialsText.add(credential.replace("false", "true"));
+            else
+                newCredentialsText.add(credential);
+        }
+        Files.write(path, newCredentialsText, StandardCharsets.UTF_8, StandardOpenOption.WRITE);
+
+
+    }
+
+    private void onlineStatusFromTrueToFalse() throws IOException {
+        Path path = Path.of("credentials.txt");
+        List<String> newCredentialsText = new ArrayList<>();
+        List<String> credentials = Files.readAllLines(path);
+
+        for (String credential : credentials) {
+            String[] split = credential.split("\t");
+            if (username.equals(split[0]))
+                newCredentialsText.add(credential.replace("true", "false"));
+
+            else
+                newCredentialsText.add(credential);
+
+        }
+        Files.write(path, newCredentialsText, StandardCharsets.UTF_8, StandardOpenOption.WRITE);
+
+
     }
 }

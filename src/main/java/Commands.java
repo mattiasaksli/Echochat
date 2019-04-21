@@ -64,6 +64,11 @@ class Commands {
     }
 
     static private String processMessage1(DataInputStream value) throws Exception {
-        return value.readUTF();
+        ClientOptions co = new ClientOptions();
+        String message = value.readUTF();
+        if (co.getTtsState())
+            TextSpeech.sayMessage(message);
+        return message;
     }
+
 }
