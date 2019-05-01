@@ -20,7 +20,7 @@ public class Update implements Runnable {
         while (true) {
             try {
                 Thread.sleep(500);
-                Commands.messageAuthor(dataOut, username);
+                /*Commands.messageAuthor(dataOut, username);*/
                 Commands.writeUpdateRequest(dataOut);
                 int gotType = Commands.getType(dataIn);
                 String message = Commands.readMessage(dataIn, gotType);

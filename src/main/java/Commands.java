@@ -16,10 +16,10 @@ class Commands {
         socketOut.writeUTF(chatroomName);
     }
 
-    static void messageAuthor(DataOutputStream socketOut, String username) throws Exception {
+    /*static void messageAuthor(DataOutputStream socketOut, String username) throws Exception {
         socketOut.writeInt(MessageTypes.AUTHOR_SIGNATURE.value());
         socketOut.writeUTF(username);
-    }
+    }*/
 
     static void writeMessage(DataOutputStream socketOut, String message, int type, boolean isRequest) throws Exception {
         if (isRequest) {

@@ -10,8 +10,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 public class ThreadSocket implements Runnable {
@@ -172,14 +174,18 @@ public class ThreadSocket implements Runnable {
                         if (cr.getName().equals(chatroomName)) {
                             this.chatroom = cr;
 
-                            StringBuilder chatroomGiantMessage = new StringBuilder();
                             List<String> chatroomContents = Files.readAllLines(Path.of("chatrooms", chatroomName + ".txt"));
 
                             for (int i = 1; i < chatroomContents.size(); i++) {
-                                chatroomGiantMessage.append(chatroomContents.get(i)).append("\n");
+                                String[] messageInfo = chatroomContents.get(i).split("\t");
+                                long timestamp = Long.valueOf(messageInfo[0]);
+                                String author = messageInfo[1];
+                                String text = messageInfo[2];
+                                Message message = new Message(timestamp, author, text);
+                                chatroom.addToMessageList(message);
                             }
 
-                            chatroom.addUserMessages(username, chatroomGiantMessage.toString());
+                            chatroom.addUserToChatroom(username);
                             isChatroomInList = true;
                             break;
                         }
@@ -195,7 +201,7 @@ public class ThreadSocket implements Runnable {
                         Chatroom cr = new Chatroom(chatroomName, path);
                         this.chatroom = cr;
                         chatrooms.add(cr);
-                        chatroom.addUserMessages(username, "");
+                        chatroom.addUserToChatroom(username);
                     }
 
                     dataOut.writeInt(MessageTypes.CHATROOMS_USER_CONNECTED.value());
@@ -204,6 +210,10 @@ public class ThreadSocket implements Runnable {
                 }
 
                 String clientMessage = Commands.readMessage(dataIn, type);
+
+                if (clientMessage.isBlank()) {
+                    continue;
+                }
 
                 if (type == MessageTypes.EXIT_CHATROOM.value()) {
                     System.out.println("user " + username + " exited chatroom " + chatroom.getName());
@@ -216,32 +226,49 @@ public class ThreadSocket implements Runnable {
 
                 if (type == MessageTypes.TEXT.value()) {
 
+                    Message message = new Message(System.currentTimeMillis(), username, clientMessage);
+
                     for (String key : chatroom.getUserAndMessages().keySet()) { //Username -> Chatroom; Chatroom(Username -> Message)
                         if (!key.equals(username)) {
-                            chatroom.replaceUserMessages(key, clientMessage);
+                            chatroom.addMessageToUser(key, message);
                         }
                     }
 
-                    if (!clientMessage.isBlank()) {
-                        Files.write(chatroom.getPath(), Collections.singletonList(clientMessage), StandardCharsets.UTF_8,
-                                StandardOpenOption.APPEND);
-                    }
+
+                    clientMessage = message.getTimestamp() + "\t" + message.getAuthor() + "\t" + message.getMessage();
+                    Files.write(chatroom.getPath(), Collections.singletonList(clientMessage), StandardCharsets.UTF_8,
+                            StandardOpenOption.APPEND);
+
 
                     System.out.println(chatroom.getName() + " received message from " + clientMessage + "\n");
                 }
 
                 if (type == MessageTypes.UPDATE_REQ.value()) {
 
-                    String message = "";
-
                     if (!chatroom.getUserAndMessages().get(username).isEmpty()) {
-                        message = chatroom.getUserAndMessages().get(username);
-                        chatroom.getUserAndMessages().replace(username, "");
+
+                        List<Message> messageList = chatroom.getUserAndMessages().get(username);
+                        for (Message m : messageList) {
+                            String message = m.getMessage();
+                            long timestamp = m.getTimestamp();
+                            String author = m.getAuthor();
+
+                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                            Date resultDate = new Date(timestamp);
+                            message = "[" + sdf.format(resultDate) + "] " + author + ">>" + message;
+
+                            System.out.print(message);
+
+                            Commands.writeMessage(dataOut, message, MessageTypes.TEXT.value(), false);
+                        }
+
+                        messageList.clear();
+
                     }
 
-                    System.out.print(message);
+                    /*System.out.print(message);
 
-                    Commands.writeMessage(dataOut, message, MessageTypes.TEXT.value(), false);
+                    Commands.writeMessage(dataOut, message, MessageTypes.TEXT.value(), false);*/
                 }
             }
 

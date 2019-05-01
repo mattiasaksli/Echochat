@@ -1,27 +1,38 @@
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 class Chatroom {
 
     private String name;
     private Path path;
-    private HashMap<String, String> userAndMessages = new HashMap<>();
+    private List<Message> messageList = new ArrayList<>();
+    private HashMap<String, List<Message>> userAndMessages = new HashMap<>();
 
     Chatroom(String name, Path path) {
         this.name = name;
         this.path = path;
     }
 
-    HashMap<String, String> getUserAndMessages() {
+    public List<Message> getMessageList() {
+        return messageList;
+    }
+
+    public void addToMessageList(Message message) {
+        messageList.add(message);
+    }
+
+    HashMap<String, List<Message>> getUserAndMessages() {
         return userAndMessages;
     }
 
-    void addUserMessages(String key, String value) {
-        userAndMessages.put(key, value);
+    void addUserToChatroom(String key) {
+        userAndMessages.put(key, messageList);
     }
 
-    void replaceUserMessages(String key, String value) {
-        userAndMessages.replace(key, value);
+    void addMessageToUser(String key, Message value) {
+        userAndMessages.get(key).add(value);
     }
 
     String getName() {
