@@ -207,7 +207,17 @@ public class ThreadSocket implements Runnable {
                     }
 
                     dataOut.writeInt(MessageTypes.CHATROOMS_USER_CONNECTED.value());
-                    System.out.println("connected user " + username + " to chatroom " + chatroomName);
+
+                    Message userConnected =  new Message(System.currentTimeMillis(), "EchoBot", "[" + username.toUpperCase() + " connected to chatroom " + chatroomName.toUpperCase() + "]");
+
+                    System.out.println(userConnected.getMessage());
+
+                    for (String key : chatroom.getUserAndMessages().keySet()) { //Username -> Chatroom; Chatroom(Username -> Message)
+                        if (!key.equals(username)) {
+                            chatroom.addMessageToUser(key, userConnected);
+                        }
+                    }
+
                     continue;
                 }
 
@@ -226,7 +236,7 @@ public class ThreadSocket implements Runnable {
 
                             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                             Date resultDate = new Date(timestamp);
-                            message = "[" + sdf.format(resultDate) + "] " + author + ">>" + message;
+                            message = "[" + sdf.format(resultDate) + "] " + author + " >>> " + message;
 
                             System.out.println(message);
 
