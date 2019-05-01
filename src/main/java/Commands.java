@@ -11,9 +11,8 @@ class Commands {
         socketOut.writeInt(MessageTypes.UPDATE_REQ.value());
     }
 
-    static void writeChatroomName(DataOutputStream socketOut, String username, String chatroomName) throws Exception {
+    static void writeChatroomName(DataOutputStream socketOut, String chatroomName) throws Exception {
         socketOut.writeInt(MessageTypes.CHATROOM_SIGNATURE.value());
-        //socketOut.writeUTF(username);
         socketOut.writeUTF(chatroomName);
     }
 
@@ -38,10 +37,6 @@ class Commands {
 
     static int getType(DataInputStream socketIn) throws Exception {
         return socketIn.readInt();
-    }
-
-    static String getUsername(DataInputStream socketIn) throws Exception {
-        return socketIn.readUTF();
     }
 
     static String readMessage(DataInputStream socketIn, int type) throws Exception {

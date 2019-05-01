@@ -1,13 +1,18 @@
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class ThreadSocket implements Runnable {
 
@@ -57,7 +62,7 @@ public class ThreadSocket implements Runnable {
         String userName = socketIn.readUTF();
         String passWord = socketIn.readUTF();
 
-        if(users.contains(userName)) {
+        if (users.contains(userName)) {
             return MessageTypes.LOGIN_USER_ALREADY_IN.value();
         }
 
@@ -159,7 +164,6 @@ public class ThreadSocket implements Runnable {
                 }
 
                 if (type == MessageTypes.CHATROOM_SIGNATURE.value()) {
-                    //username = dataIn.readUTF();
                     String chatroomName = dataIn.readUTF();
 
                     boolean isChatroomInList = false;
@@ -199,11 +203,6 @@ public class ThreadSocket implements Runnable {
                     continue;
                 }
 
-                /*if (type == MessageTypes.AUTHOR_SIGNATURE.value()) {
-                    username = Commands.getUsername(dataIn);
-                    type = Commands.getType(dataIn);
-                }*/
-
                 String clientMessage = Commands.readMessage(dataIn, type);
 
                 if (type == MessageTypes.EXIT_CHATROOM.value()) {
@@ -223,8 +222,10 @@ public class ThreadSocket implements Runnable {
                         }
                     }
 
-                    Files.write(chatroom.getPath(), Collections.singletonList(clientMessage), StandardCharsets.UTF_8,
-                            StandardOpenOption.APPEND);
+                    if (!clientMessage.isBlank()) {
+                        Files.write(chatroom.getPath(), Collections.singletonList(clientMessage), StandardCharsets.UTF_8,
+                                StandardOpenOption.APPEND);
+                    }
 
                     System.out.println(chatroom.getName() + " received message from " + clientMessage + "\n");
                 }

@@ -1,8 +1,6 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -190,7 +188,7 @@ class ClientOptions {
             }
         }
 
-        Commands.writeChatroomName(dataOut, username, chatroomName);
+        Commands.writeChatroomName(dataOut, chatroomName);
 
         if (dataIn.readInt() == MessageTypes.CHATROOMS_USER_CONNECTED.value()) {
             System.out.println("\n" + username + " connected to " + chatroomName + "!");
@@ -211,8 +209,6 @@ class ClientOptions {
 
                 String input = sc.nextLine().trim();
 
-                String toSend = username + ": " + input;
-
                 if (input.equals("END")) {
                     Commands.writeEnd(dataOut);
                     break;
@@ -228,7 +224,7 @@ class ClientOptions {
 
 
                 //Commands.messageAuthor(dataOut, username);
-                Commands.writeMessage(dataOut, toSend, type, true);
+                Commands.writeMessage(dataOut, input, type, true);
             }
         }
 
