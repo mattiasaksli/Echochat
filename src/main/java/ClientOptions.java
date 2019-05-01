@@ -194,14 +194,14 @@ class ClientOptions {
             System.out.println("\n" + username + " connected to " + chatroomName + "!");
         }
 
-        Thread update = new Thread(new Update(dataOut, dataIn, username));
+        Thread update = new Thread(new Update(dataOut, dataIn));
         update.start();
 
         int type = MessageTypes.TEXT.value();
 
-        System.out.println("Start chatting!\n");
-        System.out.println("Type 'TTS enable' to enable text to speech");
-        System.out.println("and type 'TTS disable' to disable it");
+//        System.out.println("Start chatting!\n");
+//        System.out.println("Type 'TTS enable' to enable text to speech");
+//        System.out.println("and type 'TTS disable' to disable it");
 
         if (type == MessageTypes.TEXT.value()) {
 
@@ -213,17 +213,15 @@ class ClientOptions {
                     Commands.writeEnd(dataOut);
                     break;
                 }
-                if (input.equals("TTS enable")) {
-                    ttsState = true;
-                    System.out.println("TTS enabled");
-                }
-                if (input.equals("TTS disable")) {
-                    ttsState = false;
-                    System.out.println("TTS disabled");
-                }
+//                if (input.equals("TTS enable")) {
+//                    ttsState = true;
+//                    System.out.println("TTS enabled");
+//                }
+//                if (input.equals("TTS disable")) {
+//                    ttsState = false;
+//                    System.out.println("TTS disabled");
+//                }
 
-
-                //Commands.messageAuthor(dataOut, username);
                 Commands.writeMessage(dataOut, input, type, true);
             }
         }

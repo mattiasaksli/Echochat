@@ -12,14 +12,9 @@ class Commands {
     }
 
     static void writeChatroomName(DataOutputStream socketOut, String chatroomName) throws Exception {
-        socketOut.writeInt(MessageTypes.CHATROOM_SIGNATURE.value());
+        socketOut.writeInt(MessageTypes.CHATROOM_CONNECT_USER.value());
         socketOut.writeUTF(chatroomName);
     }
-
-    /*static void messageAuthor(DataOutputStream socketOut, String username) throws Exception {
-        socketOut.writeInt(MessageTypes.AUTHOR_SIGNATURE.value());
-        socketOut.writeUTF(username);
-    }*/
 
     static void writeMessage(DataOutputStream socketOut, String message, int type, boolean isRequest) throws Exception {
         if (isRequest) {
@@ -43,11 +38,9 @@ class Commands {
 
         if (type == MessageTypes.END_SESSION.value() ||
                 type == MessageTypes.EXIT_CHATROOM.value() ||
-                type == MessageTypes.UPDATE_REQ.value() ||
-                type == MessageTypes.CHATROOM_SIGNATURE.value()) {
+                type == MessageTypes.UPDATE_REQ.value()) {
             return "";
-        } else if (type == MessageTypes.TEXT.value() ||
-                type == MessageTypes.AUTHOR_SIGNATURE.value()) {
+        } else if (type == MessageTypes.TEXT.value()) {
             return processMessage1(socketIn);
         } else {
             throw new IllegalArgumentException("type " + type);

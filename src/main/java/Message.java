@@ -10,7 +10,7 @@ public class Message {
         this.message = message;
     }
 
-    public String getAuthor() {
+    String getAuthor() {
         return author;
     }
 
@@ -18,7 +18,7 @@ public class Message {
         this.author = author;
     }
 
-    public long getTimestamp() {
+    long getTimestamp() {
         return timestamp;
     }
 
@@ -26,7 +26,7 @@ public class Message {
         this.timestamp = timestamp;
     }
 
-    public String getMessage() {
+    String getMessage() {
         return message;
     }
 

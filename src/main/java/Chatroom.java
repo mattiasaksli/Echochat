@@ -7,19 +7,21 @@ class Chatroom {
 
     private String name;
     private Path path;
-    private List<Message> messageList = new ArrayList<>();
-    private HashMap<String, List<Message>> userAndMessages = new HashMap<>();
+    private List<Message> messageList;
+    private HashMap<String, List<Message>> userAndMessages;
 
     Chatroom(String name, Path path) {
         this.name = name;
         this.path = path;
+        this.messageList = new ArrayList<>();
+        this.userAndMessages = new HashMap<>();
     }
 
     public List<Message> getMessageList() {
         return messageList;
     }
 
-    public void addToMessageList(Message message) {
+    void addToMessageList(Message message) {
         messageList.add(message);
     }
 
@@ -28,7 +30,7 @@ class Chatroom {
     }
 
     void addUserToChatroom(String key) {
-        userAndMessages.put(key, messageList);
+        userAndMessages.put(key, new ArrayList<>(messageList));
     }
 
     void addMessageToUser(String key, Message value) {

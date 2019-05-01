@@ -165,7 +165,7 @@ public class ThreadSocket implements Runnable {
                     continue;
                 }
 
-                if (type == MessageTypes.CHATROOM_SIGNATURE.value()) {
+                if (type == MessageTypes.CHATROOM_CONNECT_USER.value()) {
                     String chatroomName = dataIn.readUTF();
 
                     boolean isChatroomInList = false;
@@ -176,13 +176,15 @@ public class ThreadSocket implements Runnable {
 
                             List<String> chatroomContents = Files.readAllLines(Path.of("chatrooms", chatroomName + ".txt"));
 
-                            for (int i = 1; i < chatroomContents.size(); i++) {
-                                String[] messageInfo = chatroomContents.get(i).split("\t");
-                                long timestamp = Long.valueOf(messageInfo[0]);
-                                String author = messageInfo[1];
-                                String text = messageInfo[2];
-                                Message message = new Message(timestamp, author, text);
-                                chatroom.addToMessageList(message);
+                            if (chatroom.getMessageList().isEmpty()) {
+                                for (int i = 1; i < chatroomContents.size(); i++) {
+                                    String[] messageInfo = chatroomContents.get(i).split("\t");
+                                    long timestamp = Long.valueOf(messageInfo[0]);
+                                    String author = messageInfo[1];
+                                    String text = messageInfo[2];
+                                    Message message = new Message(timestamp, author, text);
+                                    chatroom.addToMessageList(message);
+                                }
                             }
 
                             chatroom.addUserToChatroom(username);
@@ -209,10 +211,34 @@ public class ThreadSocket implements Runnable {
                     continue;
                 }
 
-                String clientMessage = Commands.readMessage(dataIn, type);
+                if (type == MessageTypes.UPDATE_REQ.value()) {
 
-                if (clientMessage.isBlank()) {
-                    continue;
+                    if (!chatroom.getUserAndMessages().get(username).isEmpty()) {
+
+                        List<Message> messageList = chatroom.getUserAndMessages().get(username);
+                        int length = messageList.size();
+                        dataOut.writeInt(length);
+
+                        for (Message m : messageList) {
+                            String message = m.getMessage();
+                            long timestamp = m.getTimestamp();
+                            String author = m.getAuthor();
+
+                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                            Date resultDate = new Date(timestamp);
+                            message = "[" + sdf.format(resultDate) + "] " + author + ">>" + message;
+
+                            System.out.println(message);
+
+                            Commands.writeMessage(dataOut, message, MessageTypes.TEXT.value(), false);
+                        }
+
+                        chatroom.getUserAndMessages().get(username).clear();
+
+                    } else {
+                        dataOut.writeInt(0);
+                        continue;
+                    }
                 }
 
                 if (type == MessageTypes.EXIT_CHATROOM.value()) {
@@ -224,9 +250,19 @@ public class ThreadSocket implements Runnable {
                     break;
                 }
 
+                //////////////////// READ ACTUAL MESSAGE ///////////////////////
+
                 if (type == MessageTypes.TEXT.value()) {
 
+                    String clientMessage = dataIn.readUTF(); //Commands.readMessage(dataIn, type);
+
+                    if (clientMessage.isBlank()) {
+                        continue;
+                    }
+
                     Message message = new Message(System.currentTimeMillis(), username, clientMessage);
+
+                    chatroom.addToMessageList(message);
 
                     for (String key : chatroom.getUserAndMessages().keySet()) { //Username -> Chatroom; Chatroom(Username -> Message)
                         if (!key.equals(username)) {
@@ -234,45 +270,16 @@ public class ThreadSocket implements Runnable {
                         }
                     }
 
-
                     clientMessage = message.getTimestamp() + "\t" + message.getAuthor() + "\t" + message.getMessage();
                     Files.write(chatroom.getPath(), Collections.singletonList(clientMessage), StandardCharsets.UTF_8,
                             StandardOpenOption.APPEND);
 
-
                     System.out.println(chatroom.getName() + " received message from " + clientMessage + "\n");
-                }
-
-                if (type == MessageTypes.UPDATE_REQ.value()) {
-
-                    if (!chatroom.getUserAndMessages().get(username).isEmpty()) {
-
-                        List<Message> messageList = chatroom.getUserAndMessages().get(username);
-                        for (Message m : messageList) {
-                            String message = m.getMessage();
-                            long timestamp = m.getTimestamp();
-                            String author = m.getAuthor();
-
-                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                            Date resultDate = new Date(timestamp);
-                            message = "[" + sdf.format(resultDate) + "] " + author + ">>" + message;
-
-                            System.out.print(message);
-
-                            Commands.writeMessage(dataOut, message, MessageTypes.TEXT.value(), false);
-                        }
-
-                        messageList.clear();
-
-                    }
-
-                    /*System.out.print(message);
-
-                    Commands.writeMessage(dataOut, message, MessageTypes.TEXT.value(), false);*/
                 }
             }
 
         } catch (Exception e) {
+            users.remove(username);
             throw new RuntimeException();
         }
 
