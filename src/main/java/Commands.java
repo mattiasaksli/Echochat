@@ -13,7 +13,7 @@ class Commands {
 
     static void writeChatroomName(DataOutputStream socketOut, String username, String chatroomName) throws Exception {
         socketOut.writeInt(MessageTypes.CHATROOM_SIGNATURE.value());
-        socketOut.writeUTF(username);
+        //socketOut.writeUTF(username);
         socketOut.writeUTF(chatroomName);
     }
 

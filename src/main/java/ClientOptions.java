@@ -96,6 +96,8 @@ class ClientOptions {
                     System.out.println("\nUsername is incorrect!\n");
                 } else if (status == MessageTypes.LOGIN_WRONG_PASSWORD.value()) {
                     System.out.println("\nPassword is incorrect!\n");
+                } else if (status == MessageTypes.LOGIN_USER_ALREADY_IN.value()) {
+                    System.out.println("\nThat account is already logged in!\n");
                 } else if (status == MessageTypes.LOGIN_MISSING_DB.value()) {
                     System.out.println("\nRegister an account first!\n");
                     break;
@@ -209,9 +211,7 @@ class ClientOptions {
 
                 String input = sc.nextLine().trim();
 
-                String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-
-                String toSend = "[" + time + "] " + username + ": " + input;
+                String toSend = username + ": " + input;
 
                 if (input.equals("END")) {
                     Commands.writeEnd(dataOut);
@@ -227,7 +227,7 @@ class ClientOptions {
                 }
 
 
-                Commands.messageAuthor(dataOut, username);
+                //Commands.messageAuthor(dataOut, username);
                 Commands.writeMessage(dataOut, toSend, type, true);
             }
         }

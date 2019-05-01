@@ -14,11 +14,13 @@ public class ThreadSocket implements Runnable {
     private String username;
     private Chatroom chatroom;
     private List<Chatroom> chatrooms;
+    private List<String> users;
     private final Socket socket;
     private final Argon2 argon2 = Argon2Factory.create();
 
-    ThreadSocket(List<Chatroom> chatrooms, Socket ss) {
+    ThreadSocket(List<Chatroom> chatrooms, List<String> users, Socket ss) {
         this.chatrooms = chatrooms;
+        this.users = users;
         this.socket = ss;
     }
 
@@ -55,6 +57,10 @@ public class ThreadSocket implements Runnable {
         String userName = socketIn.readUTF();
         String passWord = socketIn.readUTF();
 
+        if(users.contains(userName)) {
+            return MessageTypes.LOGIN_USER_ALREADY_IN.value();
+        }
+
         if (!Files.exists(Path.of("credentials.txt"))) {
             return MessageTypes.LOGIN_MISSING_DB.value();
         }
@@ -66,6 +72,8 @@ public class ThreadSocket implements Runnable {
             if (userName.equals(split[0])) {
                 if (argon2.verify(split[1], passWord)) {
                     //onlineStatusFromFalseToTrue(username);
+                    username = userName;
+                    users.add(username);
                     return MessageTypes.LOGIN_SUCCESS.value();
                 } else {
                     return MessageTypes.LOGIN_WRONG_PASSWORD.value();
@@ -151,7 +159,7 @@ public class ThreadSocket implements Runnable {
                 }
 
                 if (type == MessageTypes.CHATROOM_SIGNATURE.value()) {
-                    username = dataIn.readUTF();
+                    //username = dataIn.readUTF();
                     String chatroomName = dataIn.readUTF();
 
                     boolean isChatroomInList = false;
@@ -191,10 +199,10 @@ public class ThreadSocket implements Runnable {
                     continue;
                 }
 
-                if (type == MessageTypes.AUTHOR_SIGNATURE.value()) {
+                /*if (type == MessageTypes.AUTHOR_SIGNATURE.value()) {
                     username = Commands.getUsername(dataIn);
                     type = Commands.getType(dataIn);
-                }
+                }*/
 
                 String clientMessage = Commands.readMessage(dataIn, type);
 

@@ -38,6 +38,7 @@ public class Server {
         int port = 1337;
 
         List<Chatroom> chatrooms = new ArrayList<>();
+        List<String> usersLoggedIn = new ArrayList<>();
 
         if (!Files.exists(Path.of("chatrooms"))) {
             new File("chatrooms").mkdir();
@@ -53,7 +54,7 @@ public class Server {
 
                 Socket socket = ss.accept();
 
-                Thread t1 = new Thread(new ThreadSocket(chatrooms, socket));
+                Thread t1 = new Thread(new ThreadSocket(chatrooms, usersLoggedIn, socket));
                 t1.start();
 
                 System.out.println(t1 + " created");

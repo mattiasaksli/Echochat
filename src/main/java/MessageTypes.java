@@ -17,7 +17,8 @@ public enum MessageTypes {
     LOGIN_SUCCESS(201),
     LOGIN_WRONG_USERNAME(202),
     LOGIN_WRONG_PASSWORD(203),
-    LOGIN_MISSING_DB(204);
+    LOGIN_MISSING_DB(204),
+    LOGIN_USER_ALREADY_IN(205);
 
     private int typeValue;
 
