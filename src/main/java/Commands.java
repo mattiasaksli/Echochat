@@ -11,9 +11,25 @@ class Commands {
         socketOut.writeInt(MessageTypes.UPDATE_REQ.value());
     }
 
+    static void writeFileUpdateRequest(DataOutputStream socketOut) throws Exception {
+        socketOut.writeInt(MessageTypes.FILE_UPDATE_REQ.value());
+    }
+
     static void writeChatroomName(DataOutputStream socketOut, String chatroomName) throws Exception {
         socketOut.writeInt(MessageTypes.CHATROOM_CONNECT_USER.value());
         socketOut.writeUTF(chatroomName);
+    }
+
+    static void writeFile(DataOutputStream socketOut, String fileName, byte[] file) throws Exception {
+        socketOut.writeInt(MessageTypes.SEND_FILE.value());
+        socketOut.writeInt(file.length);
+        socketOut.write(file);
+        socketOut.writeUTF(fileName);
+    }
+
+    static byte[] readFile(DataInputStream dataIn) throws Exception {
+        int length = dataIn.readInt();
+        return dataIn.readNBytes(length);
     }
 
     static void writeMessage(DataOutputStream socketOut, String message, int type, boolean isRequest) throws Exception {

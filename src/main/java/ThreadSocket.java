@@ -251,6 +251,35 @@ public class ThreadSocket implements Runnable {
                     }
                 }
 
+                if (type == MessageTypes.FILE_UPDATE_REQ.value()) {
+
+                    if (!chatroom.getUserAndFiles().get(username).isEmpty()) {
+
+                        List<FileMessage> fileMessageList = chatroom.getUserAndFiles().get(username);
+                        int length = fileMessageList.size();
+                        dataOut.writeInt(length);
+
+                        for (FileMessage m : fileMessageList) {
+                            byte[] file = m.getFile();
+                            long timestamp = m.getTimestamp();
+                            String author = m.getAuthor();
+                            String fileName = m.getFileName();
+
+                            /*SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                            Date resultDate = new Date(timestamp);
+                            message = "[" + sdf.format(resultDate) + "] " + author + " >>> " + message;*/
+
+                            Commands.writeFile(dataOut, fileName, file);
+                        }
+
+                        chatroom.getUserAndFiles().get(username).clear();
+
+                    } else {
+                        dataOut.writeInt(0);
+                        continue;
+                    }
+                }
+
                 if (type == MessageTypes.EXIT_CHATROOM.value()) {
                     System.out.println("user " + username + " exited chatroom " + chatroom.getName());
                     continue;
@@ -286,9 +315,29 @@ public class ThreadSocket implements Runnable {
 
                     System.out.println(chatroom.getName() + " received message from " + clientMessage + "\n");
                 }
+
+                if (type == MessageTypes.SEND_FILE.value()) {
+
+                    byte[] fileMessage = Commands.readFile(dataIn);
+                    String fileName = dataIn.readUTF();
+
+                    FileMessage file = new FileMessage(System.currentTimeMillis(), username, fileMessage, fileName);
+
+                    for (String key : chatroom.getUserAndFiles().keySet()) {
+                        if (!key.equals(username)) {
+                            chatroom.addFileToUser(key, file);
+                        }
+                    }
+
+                    System.out.println("received file from " + username);
+
+                }
+
+
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
             users.remove(username);
             throw new RuntimeException();
         }

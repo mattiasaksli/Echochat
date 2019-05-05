@@ -3,3 +3,4 @@
 target
 credentials.txt
 /chatrooms
+/target/classes/received_files

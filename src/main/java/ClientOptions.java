@@ -1,6 +1,10 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -197,6 +201,9 @@ class ClientOptions {
         Thread update = new Thread(new Update(dataOut, dataIn));
         update.start();
 
+        /*Thread fileUpdate = new Thread(new FileUpdate(dataOut, dataIn));
+        fileUpdate.start();*/
+
         int type = MessageTypes.TEXT.value();
 
 //        System.out.println("Start chatting!\n");
@@ -222,12 +229,30 @@ class ClientOptions {
 //                    System.out.println("TTS disabled");
 //                }
 
+                if (input.startsWith("!file")) {
+                    String[] getFile = input.split(" ");
+                    String fileName = "";
+
+                    try {
+                        Path filePath = Paths.get(getFile[1]);
+                        fileName = filePath.getFileName().toString();
+                        byte[] fileBytes = Files.readAllBytes(filePath);
+                        Commands.writeFile(dataOut, fileName, fileBytes);
+                    } catch (IndexOutOfBoundsException e ) {
+                        System.out.println("Write !file <file name> to send file");
+                        continue;
+                    } catch (NoSuchFileException e) {
+                        System.out.println("File " + fileName + " does not exist, try again");
+                        continue;
+                    }
+
+                    System.out.println("File sent");
+                    continue;
+                }
+
                 Commands.writeMessage(dataOut, input, type, true);
             }
         }
-
-        //TODO implement file transferring
-
 
         System.out.println("\nExited chatroom\n");
     }
