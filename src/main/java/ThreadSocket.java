@@ -18,93 +18,17 @@ import java.util.List;
 
 public class ThreadSocket implements Runnable {
 
+    private final Socket socket;
+    private final Argon2 argon2 = Argon2Factory.create();
     private String username;
     private Chatroom chatroom;
     private List<Chatroom> chatrooms;
     private List<String> users;
-    private final Socket socket;
-    private final Argon2 argon2 = Argon2Factory.create();
 
     ThreadSocket(List<Chatroom> chatrooms, List<String> users, Socket ss) {
         this.chatrooms = chatrooms;
         this.users = users;
         this.socket = ss;
-    }
-
-    private int registerUser(DataInputStream socketIn) throws IOException {
-        String userName = socketIn.readUTF();
-        String passWord = socketIn.readUTF();
-
-        String hash = argon2.hash(30, 65536, 1, passWord.toCharArray());
-
-        if (!Files.exists(Path.of("credentials.txt"))) {
-            Files.createFile(Path.of("credentials.txt"));
-        }
-
-        List<String> credentials = Files.readAllLines(Path.of("credentials.txt"));
-
-        for (String credential : credentials) {
-            String[] split = credential.split("\t");
-            if (userName.equals(split[0])) {
-                return MessageTypes.REGISTRATION_WRONG_USERNAME.value();
-            }
-            if (passWord.equals(split[1])) {
-                return MessageTypes.REGISTRATION_WRONG_PASSWORD.value();
-            }
-        }
-
-        Path path = Path.of("credentials.txt");
-        String newUser = userName + "\t" + hash + "\t" + "true";
-        Files.write(path, Collections.singletonList(newUser), StandardCharsets.UTF_8,
-                StandardOpenOption.APPEND);
-        return MessageTypes.REGISTRATION_SUCCESS.value();
-    }
-
-    private int loginUser(DataInputStream socketIn) throws IOException {
-        String userName = socketIn.readUTF();
-        String passWord = socketIn.readUTF();
-
-        if (users.contains(userName)) {
-            return MessageTypes.LOGIN_USER_ALREADY_IN.value();
-        }
-
-        if (!Files.exists(Path.of("credentials.txt"))) {
-            return MessageTypes.LOGIN_MISSING_DB.value();
-        }
-
-        List<String> credentials = Files.readAllLines(Path.of("credentials.txt"));
-
-        for (String credential : credentials) {
-            String[] split = credential.split("\t");
-            if (userName.equals(split[0])) {
-                if (argon2.verify(split[1], passWord)) {
-                    //onlineStatusFromFalseToTrue(username);
-                    username = userName;
-                    users.add(username);
-                    return MessageTypes.LOGIN_SUCCESS.value();
-                } else {
-                    return MessageTypes.LOGIN_WRONG_PASSWORD.value();
-                }
-            }
-        }
-        return MessageTypes.LOGIN_WRONG_USERNAME.value();
-    }
-
-    private void sendChatroomNames(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
-        int length = chatrooms.size();
-        dataOut.writeInt(length);
-        if (length != 0) {
-            for (Chatroom cr : chatrooms) {
-                dataOut.writeUTF(cr.getName());
-            }
-        }
-        if (dataIn.readInt() == MessageTypes.CHATROOMS_LIST_SUCCESS.value()) {
-            System.out.println("successfully sent chatrooms list to " + socket);
-        }
-    }
-
-    private void exitUser() throws IOException {
-        onlineStatusFromTrueToFalse();
     }
 
     @Override
@@ -131,92 +55,23 @@ public class ThreadSocket implements Runnable {
                 }
 
                 if (type == MessageTypes.CHATROOMS_LIST_REQ.value()) {
-                    File f = new File("chatrooms");
-                    var files = f.listFiles();
-                    if (files == null) {
-                        throw new IOException("failed to list " + f);
-                    }
-
-                    List<String> FileChatroomNames = new ArrayList<>();
-
-                    for (File file : files) {
-                        List<String> chatroomContents = Files.readAllLines(file.toPath());
-                        String chatroomName = chatroomContents.get(0);
-
-                        FileChatroomNames.add(chatroomName);
-
-                    }
-
-                    List<String> currentChatroomNames = new ArrayList<>();
-
-                    for (Chatroom cr : chatrooms) {
-                        currentChatroomNames.add(cr.getName());
-                    }
-
-                    for (String fileChatName : FileChatroomNames) {
-                        if (!currentChatroomNames.contains(fileChatName)) {
-                            Chatroom newChatroom = new Chatroom(fileChatName,
-                                    Path.of("chatrooms", fileChatName + ".txt"));
-                            chatrooms.add(newChatroom);
-                        }
-                    }
-
-                    sendChatroomNames(dataIn, dataOut);
+                    sendChatroomsList(dataIn, dataOut);
                     continue;
                 }
 
                 if (type == MessageTypes.CHATROOM_CONNECT_USER.value()) {
-                    String chatroomName = dataIn.readUTF();
+                    connectUserToChatroom(dataIn, dataOut);
 
-                    boolean isChatroomInList = false;
-
-                    for (Chatroom cr : chatrooms) {
-                        if (cr.getName().equals(chatroomName)) {
-                            this.chatroom = cr;
-
-                            List<String> chatroomContents = Files.readAllLines(Path.of("chatrooms", chatroomName + ".txt"));
-
-                            if (chatroom.getMessageList().isEmpty()) {
-                                for (int i = 1; i < chatroomContents.size(); i++) {
-                                    String[] messageInfo = chatroomContents.get(i).split("\t");
-                                    long timestamp = Long.valueOf(messageInfo[0]);
-                                    String author = messageInfo[1];
-                                    String text = messageInfo[2];
-                                    Message message = new Message(timestamp, author, text);
-                                    chatroom.addToMessageList(message);
-                                }
-                            }
-
-                            chatroom.addUserToChatroom(username);
-                            isChatroomInList = true;
-                            break;
-                        }
-                    }
-
-                    if (!isChatroomInList) {
-                        Path path = Path.of("chatrooms", chatroomName + ".txt");
-                        Files.createFile(path);
-
-                        Files.write(path, Collections.singletonList(chatroomName), StandardCharsets.UTF_8,
-                                StandardOpenOption.APPEND);
-
-                        Chatroom cr = new Chatroom(chatroomName, path);
-                        this.chatroom = cr;
-                        chatrooms.add(cr);
-                        chatroom.addUserToChatroom(username);
-                    }
-
-                    dataOut.writeInt(MessageTypes.CHATROOMS_USER_CONNECTED.value());
-
-                    Message userConnected =  new Message(System.currentTimeMillis(), "EchoBot", "[" + username.toUpperCase() + " connected to chatroom " + chatroomName.toUpperCase() + "]");
-
-                    System.out.println(userConnected.getMessage());
-
-                    for (String key : chatroom.getUserAndMessages().keySet()) { //Username -> Chatroom; Chatroom(Username -> Message)
+                    Message message = new Message(System.currentTimeMillis(), "EchoBot",
+                            "[" + username.toUpperCase() + " connected to chatroom " +
+                                    chatroom.getName().toUpperCase() + "]");
+                    for (String key : chatroom.getUserAndMessages().keySet()) {
                         if (!key.equals(username)) {
-                            chatroom.addMessageToUser(key, userConnected);
+                            chatroom.addMessageToUser(key, message);
                         }
                     }
+                    writeToFile(message);
+                    System.out.println(message.getMessage());
 
                     continue;
                 }
@@ -281,6 +136,15 @@ public class ThreadSocket implements Runnable {
                 }
 
                 if (type == MessageTypes.EXIT_CHATROOM.value()) {
+                    Message message = new Message(System.currentTimeMillis(), "EchoBot",
+                            "[" + username.toUpperCase() + " exited chatroom " +
+                                    chatroom.getName().toUpperCase() + "]");
+                    for (String key : chatroom.getUserAndMessages().keySet()) {
+                        if (!key.equals(username)) {
+                            chatroom.addMessageToUser(key, message);
+                        }
+                    }
+                    writeToFile(message);
                     System.out.println("user " + username + " exited chatroom " + chatroom.getName());
                     continue;
                 }
@@ -309,9 +173,7 @@ public class ThreadSocket implements Runnable {
                         }
                     }
 
-                    clientMessage = message.getTimestamp() + "\t" + message.getAuthor() + "\t" + message.getMessage();
-                    Files.write(chatroom.getPath(), Collections.singletonList(clientMessage), StandardCharsets.UTF_8,
-                            StandardOpenOption.APPEND);
+                    writeToFile(message);
 
                     System.out.println(chatroom.getName() + " received message from " + clientMessage + "\n");
                 }
@@ -332,17 +194,190 @@ public class ThreadSocket implements Runnable {
                     System.out.println("received file from " + username);
 
                 }
-
-
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            Message message = new Message(System.currentTimeMillis(), "EchoBot",
+                    "[" + "Connection lost to user " + username.toUpperCase() + "]");
+            for (String key : chatroom.getUserAndMessages().keySet()) {
+                if (!key.equals(username)) {
+                    chatroom.addMessageToUser(key, message);
+                }
+            }
             users.remove(username);
+            try {
+                writeToFile(message);
+            } catch (IOException ex) {
+                System.out.println("could not write to file!");
+            }
             throw new RuntimeException();
         }
 
         System.out.println("ended connection with user " + username + " at " + socket);
+    }
+
+    private int registerUser(DataInputStream socketIn) throws IOException {
+        String userName = socketIn.readUTF();
+        String passWord = socketIn.readUTF();
+
+        String hash = argon2.hash(30, 65536, 1, passWord.toCharArray());
+
+        if (!Files.exists(Path.of("credentials.txt"))) {
+            Files.createFile(Path.of("credentials.txt"));
+        }
+
+        List<String> credentials = Files.readAllLines(Path.of("credentials.txt"));
+
+        for (String credential : credentials) {
+            String[] split = credential.split("\t");
+            if (userName.equals(split[0])) {
+                return MessageTypes.REGISTRATION_WRONG_USERNAME.value();
+            }
+            if (passWord.equals(split[1])) {
+                return MessageTypes.REGISTRATION_WRONG_PASSWORD.value();
+            }
+        }
+
+        Path path = Path.of("credentials.txt");
+        String newUser = userName + "\t" + hash + "\t" + "true";
+        Files.write(path, Collections.singletonList(newUser), StandardCharsets.UTF_8,
+                StandardOpenOption.APPEND);
+        return MessageTypes.REGISTRATION_SUCCESS.value();
+    }
+
+    private int loginUser(DataInputStream socketIn) throws IOException {
+        String userName = socketIn.readUTF();
+        String passWord = socketIn.readUTF();
+
+        if (users.contains(userName)) {
+            return MessageTypes.LOGIN_USER_ALREADY_IN.value();
+        }
+
+        if (!Files.exists(Path.of("credentials.txt"))) {
+            return MessageTypes.LOGIN_MISSING_DB.value();
+        }
+
+        List<String> credentials = Files.readAllLines(Path.of("credentials.txt"));
+
+        for (String credential : credentials) {
+            String[] split = credential.split("\t");
+            if (userName.equals(split[0])) {
+                if (argon2.verify(split[1], passWord)) {
+                    //onlineStatusFromFalseToTrue(username);
+                    username = userName;
+                    users.add(username);
+                    return MessageTypes.LOGIN_SUCCESS.value();
+                } else {
+                    return MessageTypes.LOGIN_WRONG_PASSWORD.value();
+                }
+            }
+        }
+        return MessageTypes.LOGIN_WRONG_USERNAME.value();
+    }
+
+    private void sendChatroomsList(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
+        File f = new File("chatrooms");
+        var files = f.listFiles();
+        if (files == null) {
+            throw new IOException("failed to list " + f);
+        }
+
+        List<String> FileChatroomNames = new ArrayList<>();
+
+        for (File file : files) {
+            List<String> chatroomContents = Files.readAllLines(file.toPath());
+            String chatroomName = chatroomContents.get(0);
+
+            FileChatroomNames.add(chatroomName);
+
+        }
+
+        List<String> currentChatroomNames = new ArrayList<>();
+
+        for (Chatroom cr : chatrooms) {
+            currentChatroomNames.add(cr.getName());
+        }
+
+        for (String fileChatName : FileChatroomNames) {
+            if (!currentChatroomNames.contains(fileChatName)) {
+                Chatroom newChatroom = new Chatroom(fileChatName,
+                        Path.of("chatrooms", fileChatName + ".txt"));
+                chatrooms.add(newChatroom);
+            }
+        }
+
+        sendChatroomNamesToClient(dataIn, dataOut);
+    }
+
+    private void sendChatroomNamesToClient(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
+        int length = chatrooms.size();
+        dataOut.writeInt(length);
+        if (length != 0) {
+            for (Chatroom cr : chatrooms) {
+                dataOut.writeUTF(cr.getName());
+            }
+        }
+        if (dataIn.readInt() == MessageTypes.CHATROOMS_LIST_SUCCESS.value()) {
+            System.out.println("successfully sent chatrooms list to " + socket);
+        }
+    }
+
+    private void connectUserToChatroom(DataInputStream dataIn, DataOutputStream dataOut) throws IOException {
+        String chatroomName = dataIn.readUTF();
+
+        boolean isChatroomInList = false;
+
+        for (Chatroom cr : chatrooms) {
+            if (cr.getName().equals(chatroomName)) {
+                this.chatroom = cr;
+
+                List<String> chatroomContents = Files.readAllLines(Path.of("chatrooms", chatroomName + ".txt"));
+
+                if (chatroom.getMessageList().isEmpty()) {
+                    for (int i = 1; i < chatroomContents.size(); i++) {
+                        String[] messageInfo = chatroomContents.get(i).split("\t");
+                        long timestamp = Long.valueOf(messageInfo[0]);
+                        String author = messageInfo[1];
+                        String text = messageInfo[2];
+                        Message message = new Message(timestamp, author, text);
+                        chatroom.addToMessageList(message);
+                    }
+                }
+
+                chatroom.addUserToChatroom(username);
+                isChatroomInList = true;
+                break;
+            }
+        }
+
+        if (!isChatroomInList) {
+            createChatroom(chatroomName);
+        }
+
+        dataOut.writeInt(MessageTypes.CHATROOMS_USER_CONNECTED.value());
+    }
+
+    private void createChatroom(String chatroomName) throws IOException {
+        Path path = Path.of("chatrooms", chatroomName + ".txt");
+        Files.createFile(path);
+
+        Files.write(path, Collections.singletonList(chatroomName), StandardCharsets.UTF_8,
+                StandardOpenOption.APPEND);
+
+        Chatroom cr = new Chatroom(chatroomName, path);
+        this.chatroom = cr;
+        chatrooms.add(cr);
+        chatroom.addUserToChatroom(username);
+    }
+
+    private void writeToFile(Message message) throws IOException {
+        String line = message.getTimestamp() + "\t" + message.getAuthor() + "\t" + message.getMessage();
+        Files.write(chatroom.getPath(), Collections.singletonList(line), StandardCharsets.UTF_8,
+                StandardOpenOption.APPEND);
+    }
+
+    private void exitUser() throws IOException {
+        onlineStatusFromTrueToFalse();
     }
 
     private void onlineStatusFromFalseToTrue(String username) throws IOException {
