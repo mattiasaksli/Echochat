@@ -6,6 +6,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 
@@ -15,6 +16,7 @@ class ClientOptions {
     private boolean accountCreated;
     private String username;
     private boolean ttsState = false;
+    private List<String> mutedList = Collections.synchronizedList(new ArrayList<>());
 
     void welcome() {
         if (loggedIn) {
@@ -198,7 +200,7 @@ class ClientOptions {
             System.out.println("\n" + username + " connected to " + chatroomName + "!");
         }
 
-        Thread update = new Thread(new Update(dataOut, dataIn));
+        Thread update = new Thread(new Update(dataOut, dataIn, clientOptions));
         update.start();
 
         /*Thread fileUpdate = new Thread(new FileUpdate(dataOut, dataIn));
@@ -250,6 +252,32 @@ class ClientOptions {
                     continue;
                 }
 
+                if (input.startsWith("!mute")) {
+                    String annoyingClient = "";
+                    String[] split = input.split(" ");
+                    if (split.length == 2) {
+                        annoyingClient = split[1];
+                    } else {
+                        System.out.println("Write !mute <username> to mute user");
+                        continue;
+                    }
+                    mutedList.add(annoyingClient);
+                    continue;
+                }
+
+                if (input.startsWith("!unmute")) {
+                    String notAnnoyingClient = "";
+                    String[] split = input.split(" ");
+                    if (split.length == 2) {
+                        notAnnoyingClient = split[1];
+                    } else {
+                        System.out.println("Write !unmute <username> to mute user");
+                        continue;
+                    }
+                    mutedList.remove(notAnnoyingClient);
+                    continue;
+                }
+
                 Commands.writeMessage(dataOut, input, type, true);
             }
         }
@@ -285,5 +313,9 @@ class ClientOptions {
 
     boolean getTtsState() {
         return ttsState;
+    }
+
+    public List<String> getMutedList() {
+        return mutedList;
     }
 }

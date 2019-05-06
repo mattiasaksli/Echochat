@@ -5,15 +5,19 @@ import java.net.SocketException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class Update implements Runnable {
 
     private DataOutputStream dataOut;
     private DataInputStream dataIn;
+    private ClientOptions clientOptions;
 
-    Update(DataOutputStream dataOut, DataInputStream dataIn) {
+    Update(DataOutputStream dataOut, DataInputStream dataIn, ClientOptions clientOptions) {
         this.dataOut = dataOut;
         this.dataIn = dataIn;
+        this.clientOptions = clientOptions;
     }
 
     @Override
@@ -31,8 +35,21 @@ public class Update implements Runnable {
                 for (int i = 0; i < length; i++) {
                     int gotType = Commands.getType(dataIn);
                     String message = Commands.readMessage(dataIn, gotType);
+
+                    gotType = Commands.getType(dataIn);
+                    long timestamp = Long.parseLong(Commands.readMessage(dataIn, gotType).trim());
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    Date resultDate = new Date(timestamp);
+
+                    gotType = Commands.getType(dataIn);
+                    String author = Commands.readMessage(dataIn, gotType).trim();
+
+                    //Message detailedMessage = new Message(timestamp, author, message); // might be of use at some point
+
+                    message = "[" + sdf.format(resultDate) + "] " + author + " >>> " + message;
+
                     message = message.trim();
-                    if (!message.isEmpty()) {
+                    if (!message.isEmpty() && !clientOptions.getMutedList().contains(author)) {
                         System.out.print(message + "\n");
                     }
                 }

@@ -91,11 +91,13 @@ public class ThreadSocket implements Runnable {
 
                             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                             Date resultDate = new Date(timestamp);
-                            message = "[" + sdf.format(resultDate) + "] " + author + " >>> " + message;
+                            String messageServerSide = "[" + sdf.format(resultDate) + "] " + author + " >>> " + message;
 
-                            System.out.println(message);
+                            System.out.println(messageServerSide);
 
                             Commands.writeMessage(dataOut, message, MessageTypes.TEXT.value(), false);
+                            Commands.writeMessage(dataOut, String.valueOf(timestamp), MessageTypes.TEXT.value(), false);
+                            Commands.writeMessage(dataOut, author, MessageTypes.TEXT.value(), false);
                         }
 
                         chatroom.getUserAndMessages().get(username).clear();
