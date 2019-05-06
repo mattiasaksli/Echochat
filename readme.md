@@ -4,11 +4,11 @@
 
 • Chat rooms ✔
 
-• Funktsionaalsus häälsõnumite saatmiseks  
+• Funktsionaalsus häälsõnumite saatmiseks  ✔
 
-• Võimalik saata faile  
+• Võimalik saata faile  ✔
 
-• Võimalus vaadata sõnumite ajalugu 
+• Võimalus vaadata sõnumite ajalugu ✔
 
 • Kui sõnumi saaja on offline, saadab server e-mail teate  
 
