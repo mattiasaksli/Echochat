@@ -1,5 +1,6 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -203,9 +204,6 @@ class ClientOptions {
         Thread update = new Thread(new Update(dataOut, dataIn, clientOptions));
         update.start();
 
-        /*Thread fileUpdate = new Thread(new FileUpdate(dataOut, dataIn));
-        fileUpdate.start();*/
-
         int type = MessageTypes.TEXT.value();
 
 //        System.out.println("Start chatting!\n");
@@ -237,7 +235,7 @@ class ClientOptions {
 
                     try {
                         Path filePath = Paths.get(getFile[1]);
-                        fileName = filePath.getFileName().toString();
+                        fileName = filePath.getFileName().toString().trim();
                         byte[] fileBytes = Files.readAllBytes(filePath);
                         Commands.writeFile(dataOut, fileName, fileBytes);
                     } catch (IndexOutOfBoundsException e ) {
@@ -275,6 +273,39 @@ class ClientOptions {
                         continue;
                     }
                     mutedList.remove(notAnnoyingClient);
+                    continue;
+                }
+
+                if (input.startsWith("!getfile")) {
+                    String fileToRequest = "";
+
+                    String[] split = input.split(" ");
+                    if (split.length == 2) {
+                        fileToRequest = split[1];
+                    } else {
+                        System.out.println("Write !getfile <filename> to retrieve file from server.");
+                        continue;
+                    }
+
+                    Commands.writeFileUpdateRequest(dataOut);
+                    dataOut.writeUTF(fileToRequest);
+
+                    int gotType = Commands.getType(dataIn);
+
+                    if (gotType == 0) {
+                        System.out.println("No such file in server. Try again");
+                        continue;
+                    }
+
+                    byte[] file = Commands.readFile(dataIn);
+                    String fileName = dataIn.readUTF();
+
+                    if (!Files.exists(Path.of("received_files"))) {
+                        new File("received_files").mkdir();
+                    }
+
+                    Files.write(Paths.get("received_files\\" + fileName), file);
+                    System.out.print("You received a file " + fileName + "\n");
                     continue;
                 }
 

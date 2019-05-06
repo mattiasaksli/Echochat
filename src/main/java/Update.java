@@ -1,10 +1,6 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.net.SocketException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -54,25 +50,6 @@ public class Update implements Runnable {
                     }
                 }
 
-                // FILES
-
-                Commands.writeFileUpdateRequest(dataOut);
-
-                int fileLength = dataIn.readInt();
-
-                for (int i = 0; i < fileLength; i++) {
-                    int gotType = Commands.getType(dataIn);
-                    byte[] file = Commands.readFile(dataIn);
-                    String fileName = dataIn.readUTF();
-
-                    if (!Files.exists(Path.of("received_files"))) {
-                        new File("received_files").mkdir();
-                    }
-
-                    Files.write(Paths.get("received_files\\" + fileName), file);
-                    System.out.print("You received a file " + fileName + "\n");
-
-                }
             } catch (SocketException e) {
                 System.out.println("Connection terminated"); // TODO fix this.
                 break;

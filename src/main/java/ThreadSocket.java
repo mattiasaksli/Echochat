@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -110,31 +111,22 @@ public class ThreadSocket implements Runnable {
 
                 if (type == MessageTypes.FILE_UPDATE_REQ.value()) {
 
-                    if (!chatroom.getUserAndFiles().get(username).isEmpty()) {
+                    String fileName = dataIn.readUTF();
 
-                        List<FileMessage> fileMessageList = chatroom.getUserAndFiles().get(username);
-                        int length = fileMessageList.size();
-                        dataOut.writeInt(length);
+                    System.out.println(fileName);
 
-                        for (FileMessage m : fileMessageList) {
-                            byte[] file = m.getFile();
-                            long timestamp = m.getTimestamp();
-                            String author = m.getAuthor();
-                            String fileName = m.getFileName();
-
-                            /*SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                            Date resultDate = new Date(timestamp);
-                            message = "[" + sdf.format(resultDate) + "] " + author + " >>> " + message;*/
-
-                            Commands.writeFile(dataOut, fileName, file);
-                        }
-
-                        chatroom.getUserAndFiles().get(username).clear();
-
+                    if (Files.exists(Path.of("file_storage\\" + fileName))) {
+                        Path filePath = Paths.get("file_storage\\" + fileName);
+                        fileName = filePath.getFileName().toString();
+                        byte[] fileBytes = Files.readAllBytes(filePath);
+                        Commands.writeFile(dataOut, fileName, fileBytes);
+                        System.out.println("Sent file to " + username);
                     } else {
                         dataOut.writeInt(0);
                         continue;
                     }
+
+
                 }
 
                 if (type == MessageTypes.EXIT_CHATROOM.value()) {
@@ -159,7 +151,7 @@ public class ThreadSocket implements Runnable {
 
                 if (type == MessageTypes.TEXT.value()) {
 
-                    String clientMessage = dataIn.readUTF(); //Commands.readMessage(dataIn, type);
+                    String clientMessage = dataIn.readUTF();
 
                     if (clientMessage.isBlank()) {
                         continue;
@@ -169,7 +161,7 @@ public class ThreadSocket implements Runnable {
 
                     chatroom.addToMessageList(message);
 
-                    for (String key : chatroom.getUserAndMessages().keySet()) { //Username -> Chatroom; Chatroom(Username -> Message)
+                    for (String key : chatroom.getUserAndMessages().keySet()) {
                         if (!key.equals(username)) {
                             chatroom.addMessageToUser(key, message);
                         }
@@ -187,11 +179,20 @@ public class ThreadSocket implements Runnable {
 
                     FileMessage file = new FileMessage(System.currentTimeMillis(), username, fileMessage, fileName);
 
-                    for (String key : chatroom.getUserAndFiles().keySet()) {
+                    if (!Files.exists(Path.of("file_storage"))) {
+                        new File("file_storage").mkdir();
+                    }
+
+                    Files.write(Paths.get("file_storage\\" + fileName), file.getFile());
+
+                    Message message = new Message(System.currentTimeMillis(), "EchoBot", "A file " + fileName + " was sent to the server. Use !getfile <filename> to retrieve it.");
+                    for (String key : chatroom.getUserAndMessages().keySet()) {
                         if (!key.equals(username)) {
-                            chatroom.addFileToUser(key, file);
+                            chatroom.addMessageToUser(key, message);
                         }
                     }
+
+                    writeToFile(message);
 
                     System.out.println("received file from " + username);
 
