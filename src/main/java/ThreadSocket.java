@@ -179,8 +179,8 @@ public class ThreadSocket implements Runnable {
 
                     FileMessage file = new FileMessage(System.currentTimeMillis(), username, fileMessage, fileName);
 
-                    if (!Files.exists(Path.of("file_storage"))) {
-                        new File("file_storage").mkdir();
+                    if (Files.notExists(Path.of("file_storage"))) {
+                        Files.createFile(Path.of("file_storage"));
                     }
 
                     Files.write(Paths.get("file_storage\\" + fileName), file.getFile());
@@ -225,7 +225,7 @@ public class ThreadSocket implements Runnable {
 
         String hash = argon2.hash(30, 65536, 1, passWord.toCharArray());
 
-        if (!Files.exists(Path.of("credentials.txt"))) {
+        if (Files.notExists(Path.of("credentials.txt"))) {
             Files.createFile(Path.of("credentials.txt"));
         }
 
@@ -256,7 +256,7 @@ public class ThreadSocket implements Runnable {
             return MessageTypes.LOGIN_USER_ALREADY_IN.value();
         }
 
-        if (!Files.exists(Path.of("credentials.txt"))) {
+        if (Files.notExists(Path.of("credentials.txt"))) {
             return MessageTypes.LOGIN_MISSING_DB.value();
         }
 
@@ -379,43 +379,4 @@ public class ThreadSocket implements Runnable {
                 StandardOpenOption.APPEND);
     }
 
-    private void exitUser() throws IOException {
-        onlineStatusFromTrueToFalse();
-    }
-
-    private void onlineStatusFromFalseToTrue(String username) throws IOException {
-        Path path = Path.of("credentials.txt");
-        List<String> newCredentialsText = new ArrayList<>();
-        List<String> credentials = Files.readAllLines(path);
-
-        for (String credential : credentials) {
-            String[] split = credential.split("\t");
-            if (username.equals(split[0]))
-                newCredentialsText.add(credential.replace("false", "true"));
-            else
-                newCredentialsText.add(credential);
-        }
-        Files.write(path, newCredentialsText, StandardCharsets.UTF_8, StandardOpenOption.WRITE);
-
-
-    }
-
-    private void onlineStatusFromTrueToFalse() throws IOException {
-        Path path = Path.of("credentials.txt");
-        List<String> newCredentialsText = new ArrayList<>();
-        List<String> credentials = Files.readAllLines(path);
-
-        for (String credential : credentials) {
-            String[] split = credential.split("\t");
-            if (username.equals(split[0]))
-                newCredentialsText.add(credential.replace("true", "false"));
-
-            else
-                newCredentialsText.add(credential);
-
-        }
-        Files.write(path, newCredentialsText, StandardCharsets.UTF_8, StandardOpenOption.WRITE);
-
-
-    }
 }

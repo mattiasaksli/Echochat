@@ -40,7 +40,7 @@ class Commands {
         } else {
             if (type == MessageTypes.TEXT.value()) {
                 socketOut.writeInt(type);
-                socketOut.writeUTF(CurseFilter.replaceCurseWordsWithAsterisks(message));
+                socketOut.writeUTF(message);
 
             }
         }
@@ -64,10 +64,9 @@ class Commands {
     }
 
     static private String processMessage1(DataInputStream value) throws Exception {
-        ClientOptions co = new ClientOptions();
+//        ClientOptions co = new ClientOptions();
         String message = value.readUTF();
-        if (co.getTtsState())
-            TextSpeech.sayMessage(message);
+
         return message;
     }
 

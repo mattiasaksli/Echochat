@@ -204,10 +204,6 @@ class ClientOptions {
 
         int type = MessageTypes.TEXT.value();
 
-//        System.out.println("Start chatting!\n");
-//        System.out.println("Type 'TTS enable' to enable text to speech");
-//        System.out.println("and type 'TTS disable' to disable it");
-
         if (type == MessageTypes.TEXT.value()) {
 
             while (sc.hasNext()) {
@@ -218,16 +214,33 @@ class ClientOptions {
                     Commands.writeEnd(dataOut);
                     break;
                 }
-//                if (input.equals("TTS enable")) {
-//                    ttsState = true;
-//                    System.out.println("TTS enabled");
-//                }
-//                if (input.equals("TTS disable")) {
-//                    ttsState = false;
-//                    System.out.println("TTS disabled");
-//                }
 
-                if (input.startsWith("!file")) {
+                if (input.startsWith("!help")) {
+                    System.out.println("List of commands:");
+                    System.out.println("\t !TTS enable to enable text to speech");
+                    System.out.println("\t !TTS disable to disable text to speech");
+                    System.out.println("\t !file <filename> to send a file");
+                    System.out.println("\t !getfile <filename> to get a file");
+                    System.out.println("\t !mute <username> to mute a person");
+                    System.out.println("\t !unmute <username> to unmute a person");
+
+                }
+
+                if (input.startsWith("!TTS")){
+                    String option = input.split(" ")[1];
+                    if (option.equals("enable")){
+                        ttsState = true;
+                        System.out.println("TTS enabled!");
+                    }else if (option.equals("disable")){
+                        ttsState = false;
+                        System.out.println("TTS disabled!");
+
+                    }else{
+                        System.out.println("Unknown option " + option +" ! Try again!");
+                    }
+                }
+
+                    if (input.startsWith("!file")) {
                     String[] getFile = input.split(" ", 2);
                     String fileName = "";
 
@@ -300,7 +313,7 @@ class ClientOptions {
                     byte[] file = Commands.readFile(dataIn);
                     String fileName = dataIn.readUTF();
 
-                    if (!Files.exists(Path.of("received_files"))) {
+                    if (Files.notExists(Path.of("received_files"))) {
                         Files.createDirectories(Path.of("received_files"));
                     }
 

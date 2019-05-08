@@ -2,15 +2,21 @@ import com.sun.speech.freetts.Voice;
 import com.sun.speech.freetts.VoiceManager;
 
 
-public class TextSpeech {
+class TextSpeech {
+
 
     private String text;
-
-    public TextSpeech(String text) {
+    boolean TTSvalue;
+    private TextSpeech(String text) {
         this.text = text;
     }
 
-    public void speak() {
+    public static void editMessage(String message) {
+        String[] split = message.split(":");
+        sayMessage(split[1]);
+    }
+
+    private void speak() {
         Voice voice;
         VoiceManager voiceManager = VoiceManager.getInstance();
         voice = voiceManager.getVoice("kevin16");
@@ -18,7 +24,7 @@ public class TextSpeech {
         voice.speak(text);
     }
 
-    public static void sayMessage(String message) {
+    static void sayMessage(String message) {
         System.setProperty("freetts.voices", "com.sun.speech.freetts.en.us.cmu_us_kal.KevinVoiceDirectory");
         TextSpeech ts = new TextSpeech(message);
         ts.speak();
