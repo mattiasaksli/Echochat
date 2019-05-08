@@ -151,7 +151,7 @@ public class ThreadSocket implements Runnable {
 
                 if (type == MessageTypes.TEXT.value()) {
 
-                    String clientMessage = dataIn.readUTF();
+                    String clientMessage = CurseFilter.replaceCurseWordsWithAsterisks(dataIn.readUTF());
 
                     if (clientMessage.isBlank()) {
                         continue;
