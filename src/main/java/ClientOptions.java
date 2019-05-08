@@ -1,9 +1,7 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -230,19 +228,21 @@ class ClientOptions {
 //                }
 
                 if (input.startsWith("!file")) {
-                    String[] getFile = input.split(" ");
+                    String[] getFile = input.split(" ", 2);
                     String fileName = "";
 
-                    try {
+                    if (getFile.length == 2) {
                         Path filePath = Paths.get(getFile[1]);
                         fileName = filePath.getFileName().toString().trim();
-                        byte[] fileBytes = Files.readAllBytes(filePath);
-                        Commands.writeFile(dataOut, fileName, fileBytes);
-                    } catch (IndexOutOfBoundsException e ) {
+                        if (Files.isRegularFile(filePath)) {
+                            byte[] fileBytes = Files.readAllBytes(filePath);
+                            Commands.writeFile(dataOut, fileName, fileBytes);
+                        } else {
+                            System.out.println("File " + fileName + " does not exist, try again");
+                            continue;
+                        }
+                    } else {
                         System.out.println("Write !file <file name> to send file");
-                        continue;
-                    } catch (NoSuchFileException e) {
-                        System.out.println("File " + fileName + " does not exist, try again");
                         continue;
                     }
 
@@ -252,7 +252,7 @@ class ClientOptions {
 
                 if (input.startsWith("!mute")) {
                     String annoyingClient = "";
-                    String[] split = input.split(" ");
+                    String[] split = input.split(" ", 2);
                     if (split.length == 2) {
                         annoyingClient = split[1];
                     } else {
@@ -265,7 +265,7 @@ class ClientOptions {
 
                 if (input.startsWith("!unmute")) {
                     String notAnnoyingClient = "";
-                    String[] split = input.split(" ");
+                    String[] split = input.split(" ", 2);
                     if (split.length == 2) {
                         notAnnoyingClient = split[1];
                     } else {
@@ -279,7 +279,7 @@ class ClientOptions {
                 if (input.startsWith("!getfile")) {
                     String fileToRequest = "";
 
-                    String[] split = input.split(" ");
+                    String[] split = input.split(" ", 2);
                     if (split.length == 2) {
                         fileToRequest = split[1];
                     } else {
@@ -301,7 +301,7 @@ class ClientOptions {
                     String fileName = dataIn.readUTF();
 
                     if (!Files.exists(Path.of("received_files"))) {
-                        new File("received_files").mkdir();
+                        Files.createDirectories(Path.of("received_files"));
                     }
 
                     Files.write(Paths.get("received_files\\" + fileName), file);

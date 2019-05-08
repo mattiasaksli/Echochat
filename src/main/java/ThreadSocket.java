@@ -115,7 +115,7 @@ public class ThreadSocket implements Runnable {
 
                     System.out.println(fileName);
 
-                    if (Files.exists(Path.of("file_storage\\" + fileName))) {
+                    if (Files.exists(Path.of("file_storage", fileName))) {
                         Path filePath = Paths.get("file_storage\\" + fileName);
                         fileName = filePath.getFileName().toString();
                         byte[] fileBytes = Files.readAllBytes(filePath);
