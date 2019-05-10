@@ -10,7 +10,7 @@
 
 • Võimalus vaadata sõnumite ajalugu ✔
 
-• Kui sõnumi saaja on offline, saadab server e-mail teate  
+• Kui sõnumi saaja on offline, saadab server e-mail teate ✔
 
 • Sisselogimine ✔
 
