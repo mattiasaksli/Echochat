@@ -147,8 +147,7 @@ class ClientOptions {
         return chatrooms;
     }
 
-    void connectToChatroom(ClientOptions clientOptions, Scanner sc,
-                           DataInputStream dataIn, DataOutputStream dataOut) throws Exception {
+    void connectToChatroom(ClientOptions clientOptions, Scanner sc, DataInputStream dataIn, DataOutputStream dataOut) throws Exception {
 
         List<String> chatrooms = getChatroomNames(dataIn, dataOut);
 
@@ -197,6 +196,7 @@ class ClientOptions {
 
         if (dataIn.readInt() == MessageTypes.CHATROOMS_USER_CONNECTED.value()) {
             System.out.println("\n" + username + " connected to " + chatroomName + "!");
+            TextSpeech.sayMessage("Welcome to Echoboys messenger boii!");
         }
 
         Thread update = new Thread(new Update(dataOut, dataIn, clientOptions));
@@ -226,21 +226,33 @@ class ClientOptions {
 
                 }
 
-                if (input.startsWith("!TTS")){
-                    String option = input.split(" ")[1];
-                    if (option.equals("enable")){
-                        ttsState = true;
-                        System.out.println("TTS enabled!");
-                    }else if (option.equals("disable")){
-                        ttsState = false;
-                        System.out.println("TTS disabled!");
+                if (input.startsWith("!TTS")) {
+                    String[] option = input.split(" ", 2);
+                    if (option.length == 2) {
 
-                    }else{
-                        System.out.println("Unknown option " + option +" ! Try again!");
+                        String state = option[1];
+                        if (state.equals("enable")) {
+                            ttsState = true;
+                            System.out.println("TTS enabled!");
+                            continue;
+
+                        } else if (state.equals("disable")) {
+                            ttsState = false;
+                            System.out.println("TTS disabled!");
+                            continue;
+
+                        } else {
+                            System.out.println("Unknown option " + state + " ! Try again!");
+                            continue;
+                        }
+                    } else {
+                        System.out.println("Write !TTS <enable/disable> to use TTS");
+                        continue;
                     }
                 }
 
-                    if (input.startsWith("!file")) {
+                if (input.startsWith("!file")) {
+
                     String[] getFile = input.split(" ", 2);
                     String fileName = "";
 
@@ -261,6 +273,7 @@ class ClientOptions {
 
                     System.out.println("File sent");
                     continue;
+
                 }
 
                 if (input.startsWith("!mute")) {

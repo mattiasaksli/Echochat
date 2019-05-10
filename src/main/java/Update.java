@@ -9,6 +9,7 @@ public class Update implements Runnable {
     private DataOutputStream dataOut;
     private DataInputStream dataIn;
     private ClientOptions clientOptions;
+    private boolean ttsState;
 
     Update(DataOutputStream dataOut, DataInputStream dataIn, ClientOptions clientOptions) {
         this.dataOut = dataOut;
@@ -40,13 +41,14 @@ public class Update implements Runnable {
                     gotType = Commands.getType(dataIn);
                     String author = Commands.readMessage(dataIn, gotType).trim();
 
-                    //Message detailedMessage = new Message(timestamp, author, message); // might be of use at some point
+                    String messageString = "[" + sdf.format(resultDate) + "] " + author + " >>> " + message;
 
-                    message = "[" + sdf.format(resultDate) + "] " + author + " >>> " + message;
-
-                    message = message.trim();
-                    if (!message.isEmpty() && !clientOptions.getMutedList().contains(author)) {
-                        System.out.print(message + "\n");
+                    messageString = messageString.trim();
+                    if (!messageString.isEmpty() && !clientOptions.getMutedList().contains(author)) {
+                        if (clientOptions.getTtsState()) {
+                            TextSpeech.sayMessage(message);
+                        }
+                        System.out.print(messageString + "\n");
                     }
                 }
 
