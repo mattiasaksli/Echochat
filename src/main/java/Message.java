@@ -14,23 +14,12 @@ public class Message {
         return author;
     }
 
-    public void setAuthor(String author) {
-        this.author = author;
-    }
-
     long getTimestamp() {
         return timestamp;
-    }
-
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
     }
 
     String getMessage() {
         return message;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
-    }
 }

@@ -57,17 +57,9 @@ class Commands {
                 type == MessageTypes.UPDATE_REQ.value()) {
             return "";
         } else if (type == MessageTypes.TEXT.value()) {
-            return processMessage1(socketIn);
+            return socketIn.readUTF();
         } else {
             throw new IllegalArgumentException("type " + type);
         }
     }
-
-    static private String processMessage1(DataInputStream value) throws Exception {
-//        ClientOptions co = new ClientOptions();
-        String message = value.readUTF();
-
-        return message;
-    }
-
 }

@@ -8,7 +8,6 @@ class Chatroom {
     private String name;
     private Path path;
     private List<Message> messageList;
-    private List<FileMessage> fileMessageList;
     private HashMap<String, List<Message>> userAndMessages;
 
     Chatroom(String name, Path path) {
@@ -18,7 +17,7 @@ class Chatroom {
         this.userAndMessages = new HashMap<>();
     }
 
-    public List<Message> getMessageList() {
+    List<Message> getMessageList() {
         return messageList;
     }
 

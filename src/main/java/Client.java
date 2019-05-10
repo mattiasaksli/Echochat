@@ -1,7 +1,10 @@
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.security.KeyManagementException;
@@ -26,7 +29,13 @@ public class Client {
         int port = 1337;
 
         Scanner sc = new Scanner(System.in);
-        String IP = args[0];
+        String IP;
+        if (args.length == 0) {
+            System.out.print("Please enter the server IP: ");
+            IP = sc.next();
+        } else {
+            IP = args[0];
+        }
 
         System.out.println("\nConnecting to server...");
 

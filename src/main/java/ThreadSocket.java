@@ -12,24 +12,28 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public class ThreadSocket implements Runnable {
 
     private final Socket socket;
     private final Argon2 argon2 = Argon2Factory.create();
     private String username;
+    private String email;
     private Chatroom chatroom;
     private List<Chatroom> chatrooms;
     private List<String> users;
+    private List<Chatroom> chatroomsParticipatingIn = new ArrayList<>();
+    private Map<String, NotificationSender> userNotifier;
+    private Map<String, Thread> userNotifierThread;
 
-    ThreadSocket(List<Chatroom> chatrooms, List<String> users, Socket ss) {
+    ThreadSocket(List<Chatroom> chatrooms, List<String> users, Socket ss, Map<String, NotificationSender> userNotifier,
+                 Map<String, Thread> userNotifierThread) {
         this.chatrooms = chatrooms;
         this.users = users;
         this.socket = ss;
+        this.userNotifier = userNotifier;
+        this.userNotifierThread = userNotifierThread;
     }
 
     @Override
@@ -71,7 +75,7 @@ public class ThreadSocket implements Runnable {
                             chatroom.addMessageToUser(key, message);
                         }
                     }
-                    writeToFile(message);
+                    writeMessageToFile(message);
                     System.out.println(message.getMessage());
 
                     continue;
@@ -138,7 +142,7 @@ public class ThreadSocket implements Runnable {
                             chatroom.addMessageToUser(key, message);
                         }
                     }
-                    writeToFile(message);
+                    writeMessageToFile(message);
                     System.out.println("user " + username + " exited chatroom " + chatroom.getName());
                     continue;
                 }
@@ -167,9 +171,9 @@ public class ThreadSocket implements Runnable {
                         }
                     }
 
-                    writeToFile(message);
+                    writeMessageToFile(message);
 
-                    System.out.println(chatroom.getName() + " received message from " + clientMessage + "\n");
+                    System.out.println(chatroom.getName() + " received message from user " + username + " : " + clientMessage + "\n");
                 }
 
                 if (type == MessageTypes.SEND_FILE.value()) {
@@ -179,20 +183,23 @@ public class ThreadSocket implements Runnable {
 
                     FileMessage file = new FileMessage(System.currentTimeMillis(), username, fileMessage, fileName);
 
-                    if (Files.notExists(Path.of("file_storage"))) {
-                        Files.createFile(Path.of("file_storage"));
+                    if (!Files.exists(Path.of("file_storage"))) {
+                        if (!new File("file_storage").mkdir()) {
+                            throw new RuntimeException("Failed to create folder file_storage!");
+                        }
                     }
 
-                    Files.write(Paths.get("file_storage\\" + fileName), file.getFile());
+                    Files.write(Paths.get("file_storage", fileName), file.getFile());
 
-                    Message message = new Message(System.currentTimeMillis(), "EchoBot", "A file " + fileName + " was sent to the server. Use !getfile <filename> to retrieve it.");
+                    Message message = new Message(System.currentTimeMillis(), "EchoBot", "A file " +
+                            fileName + " was sent to the server. Use !getfile <filename> to retrieve it.");
                     for (String key : chatroom.getUserAndMessages().keySet()) {
                         if (!key.equals(username)) {
                             chatroom.addMessageToUser(key, message);
                         }
                     }
 
-                    writeToFile(message);
+                    writeMessageToFile(message);
 
                     System.out.println("received file from " + username);
 
@@ -207,25 +214,40 @@ public class ThreadSocket implements Runnable {
                     chatroom.addMessageToUser(key, message);
                 }
             }
-            users.remove(username);
             try {
-                writeToFile(message);
+                writeMessageToFile(message);
             } catch (IOException ex) {
                 System.out.println("could not write to file!");
             }
+            System.out.println(e.getMessage());
             throw new RuntimeException();
         }
 
+        users.remove(username);
         System.out.println("ended connection with user " + username + " at " + socket);
+
+        if (!email.equals("!NONE")) {
+            NotificationSender ns = new NotificationSender();
+            Thread noteSendThread = new Thread(ns);
+
+            ns.setEmail(email);
+            ns.setUsername(username);
+            ns.setChatrooms(chatroomsParticipatingIn);
+            noteSendThread.start();
+            userNotifier.put(username, ns);
+            userNotifierThread.put(username, noteSendThread);
+            System.out.println("started email notification sender");
+        }
     }
 
     private int registerUser(DataInputStream socketIn) throws IOException {
         String userName = socketIn.readUTF();
         String passWord = socketIn.readUTF();
+        String email = socketIn.readUTF();
 
         String hash = argon2.hash(30, 65536, 1, passWord.toCharArray());
 
-        if (Files.notExists(Path.of("credentials.txt"))) {
+        if (!Files.exists(Path.of("credentials.txt"))) {
             Files.createFile(Path.of("credentials.txt"));
         }
 
@@ -242,13 +264,13 @@ public class ThreadSocket implements Runnable {
         }
 
         Path path = Path.of("credentials.txt");
-        String newUser = userName + "\t" + hash + "\t" + "true";
+        String newUser = userName + "\t" + hash + "\t" + email;
         Files.write(path, Collections.singletonList(newUser), StandardCharsets.UTF_8,
                 StandardOpenOption.APPEND);
         return MessageTypes.REGISTRATION_SUCCESS.value();
     }
 
-    private int loginUser(DataInputStream socketIn) throws IOException {
+    private int loginUser(DataInputStream socketIn) throws IOException, InterruptedException {
         String userName = socketIn.readUTF();
         String passWord = socketIn.readUTF();
 
@@ -256,7 +278,7 @@ public class ThreadSocket implements Runnable {
             return MessageTypes.LOGIN_USER_ALREADY_IN.value();
         }
 
-        if (Files.notExists(Path.of("credentials.txt"))) {
+        if (!Files.exists(Path.of("credentials.txt"))) {
             return MessageTypes.LOGIN_MISSING_DB.value();
         }
 
@@ -266,15 +288,21 @@ public class ThreadSocket implements Runnable {
             String[] split = credential.split("\t");
             if (userName.equals(split[0])) {
                 if (argon2.verify(split[1], passWord)) {
-                    //onlineStatusFromFalseToTrue(username);
                     username = userName;
                     users.add(username);
+                    email = split[2];
                     return MessageTypes.LOGIN_SUCCESS.value();
                 } else {
                     return MessageTypes.LOGIN_WRONG_PASSWORD.value();
                 }
             }
         }
+
+        if (userNotifier.containsKey(username)) {
+            userNotifier.get(username).stop();
+            userNotifierThread.get(username).join();
+        }
+
         return MessageTypes.LOGIN_WRONG_USERNAME.value();
     }
 
@@ -288,11 +316,13 @@ public class ThreadSocket implements Runnable {
         List<String> FileChatroomNames = new ArrayList<>();
 
         for (File file : files) {
+            if (file.toString().endsWith("_users.txt")) {
+                continue;
+            }
             List<String> chatroomContents = Files.readAllLines(file.toPath());
             String chatroomName = chatroomContents.get(0);
 
             FileChatroomNames.add(chatroomName);
-
         }
 
         List<String> currentChatroomNames = new ArrayList<>();
@@ -357,6 +387,15 @@ public class ThreadSocket implements Runnable {
             createChatroom(chatroomName);
         }
 
+        Path path = Path.of("chatrooms", chatroomName + "_users.txt");
+        List<String> usernames = Files.readAllLines(path);
+
+        if (!usernames.contains(username)) {
+            Files.write(path, Collections.singletonList(username),
+                    StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+        }
+
+        chatroomsParticipatingIn.add(chatroom);
         dataOut.writeInt(MessageTypes.CHATROOMS_USER_CONNECTED.value());
     }
 
@@ -367,13 +406,15 @@ public class ThreadSocket implements Runnable {
         Files.write(path, Collections.singletonList(chatroomName), StandardCharsets.UTF_8,
                 StandardOpenOption.APPEND);
 
+        Files.createFile(Path.of("chatrooms", chatroomName + "_users.txt"));
+
         Chatroom cr = new Chatroom(chatroomName, path);
         this.chatroom = cr;
         chatrooms.add(cr);
         chatroom.addUserToChatroom(username);
     }
 
-    private void writeToFile(Message message) throws IOException {
+    private void writeMessageToFile(Message message) throws IOException {
         String line = message.getTimestamp() + "\t" + message.getAuthor() + "\t" + message.getMessage();
         Files.write(chatroom.getPath(), Collections.singletonList(line), StandardCharsets.UTF_8,
                 StandardOpenOption.APPEND);

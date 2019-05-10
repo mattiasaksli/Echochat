@@ -9,7 +9,6 @@ public class Update implements Runnable {
     private DataOutputStream dataOut;
     private DataInputStream dataIn;
     private ClientOptions clientOptions;
-    private boolean ttsState;
 
     Update(DataOutputStream dataOut, DataInputStream dataIn, ClientOptions clientOptions) {
         this.dataOut = dataOut;

@@ -11,11 +11,14 @@ import java.nio.file.Path;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Server {
 
-    private static SSLContext getSSLContext() throws IOException, KeyStoreException, NoSuchAlgorithmException, CertificateException, UnrecoverableKeyException, KeyManagementException {
+    private static SSLContext getSSLContext() throws IOException, KeyStoreException, NoSuchAlgorithmException,
+            CertificateException, UnrecoverableKeyException, KeyManagementException {
         ClassLoader cl = Server.class.getClassLoader();
         String storePass = "secret";
         KeyStore store;
@@ -39,9 +42,13 @@ public class Server {
 
         List<Chatroom> chatrooms = new ArrayList<>();
         List<String> usersLoggedIn = new ArrayList<>();
+        Map<String, NotificationSender> userNotifier = new HashMap<>();
+        Map<String, Thread> userNotifierThread = new HashMap<>();
 
         if (!Files.exists(Path.of("chatrooms"))) {
-            new File("chatrooms").mkdir();
+            if (!new File("chatrooms").mkdir()) {
+                throw new RuntimeException("Failed to create folder chatrooms!");
+            }
         }
 
         SSLContext ctx = getSSLContext();
@@ -54,7 +61,7 @@ public class Server {
 
                 Socket socket = ss.accept();
 
-                Thread t1 = new Thread(new ThreadSocket(chatrooms, usersLoggedIn, socket));
+                Thread t1 = new Thread(new ThreadSocket(chatrooms, usersLoggedIn, socket, userNotifier, userNotifierThread));
                 t1.start();
 
                 System.out.println(t1 + " created");
