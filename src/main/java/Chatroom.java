@@ -9,10 +9,12 @@ class Chatroom {
     private Path path;
     private List<Message> messageList;
     private HashMap<String, List<Message>> userAndMessages;
+    private int size;
 
-    Chatroom(String name, Path path) {
+    Chatroom(String name, Path path, int size) {
         this.name = name;
         this.path = path;
+        this.size = size;
         this.messageList = new ArrayList<>();
         this.userAndMessages = new HashMap<>();
     }
@@ -43,5 +45,9 @@ class Chatroom {
 
     Path getPath() {
         return path;
+    }
+
+    int getSize() {
+        return size;
     }
 }
