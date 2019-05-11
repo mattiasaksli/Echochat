@@ -114,8 +114,7 @@ class ClientOptions {
         }
     }
 
-    private int sendUserInfo(DataInputStream dataIn, DataOutputStream dataOut, int type,
-                             String userName, String passWord, String email) throws IOException {
+    private int sendUserInfo(DataInputStream dataIn, DataOutputStream dataOut, int type, String userName, String passWord, String email) throws IOException {
         dataOut.writeInt(type);
         dataOut.writeUTF(userName);
         dataOut.writeUTF(passWord);
@@ -214,11 +213,13 @@ class ClientOptions {
 
             String input = sc.nextLine().trim();
 
+            //END COMMAND
             if (input.equals("END")) {
                 Commands.writeEnd(dataOut);
                 break;
             }
 
+            //HELP COMMAND
             if (input.startsWith("!help")) {
                 System.out.println("List of commands:");
                 System.out.println("\t !TTS enable to enable text to speech");
@@ -227,9 +228,22 @@ class ClientOptions {
                 System.out.println("\t !getfile <filename> to get a file");
                 System.out.println("\t !mute <username> to mute a person");
                 System.out.println("\t !unmute <username> to unmute a person");
-
+                System.out.println("\t !slack <message> to send a message to slack channel");
             }
 
+            //SLACK COMMAND
+            if (input.startsWith("!slack")) {
+                String[] message = input.split(" ", 2);
+                if (message.length == 2) {
+                    String messageToSend = username + ": " + message[1];
+                    SlackUtils.sendMessage(messageToSend);
+                    System.out.println("Message sent to Slack!");
+                } else {
+                    System.out.println("Write !slack <message> to send a message!");
+                }
+            }
+
+            //TTS COMMAND
             if (input.startsWith("!TTS")) {
                 String[] option = input.split(" ", 2);
                 if (option.length == 2) {
@@ -238,23 +252,20 @@ class ClientOptions {
                     if (state.equals("enable")) {
                         ttsState = true;
                         System.out.println("TTS enabled!");
-                        continue;
 
                     } else if (state.equals("disable")) {
                         ttsState = false;
                         System.out.println("TTS disabled!");
-                        continue;
 
                     } else {
                         System.out.println("Unknown option " + state + " ! Try again!");
-                        continue;
                     }
                 } else {
                     System.out.println("Write !TTS <enable/disable> to use TTS");
-                    continue;
                 }
             }
 
+            //FILE COMMAND
             if (input.startsWith("!file")) {
 
                 String[] getFile = input.split(" ", 2);
@@ -276,36 +287,10 @@ class ClientOptions {
                 }
 
                 System.out.println("File sent");
-                continue;
 
             }
 
-            if (input.startsWith("!mute")) {
-                String annoyingClient;
-                String[] split = input.split(" ", 2);
-                if (split.length == 2) {
-                    annoyingClient = split[1];
-                } else {
-                    System.out.println("Write !mute <username> to mute user");
-                    continue;
-                }
-                mutedList.add(annoyingClient);
-                continue;
-            }
-
-            if (input.startsWith("!unmute")) {
-                String notAnnoyingClient;
-                String[] split = input.split(" ", 2);
-                if (split.length == 2) {
-                    notAnnoyingClient = split[1];
-                } else {
-                    System.out.println("Write !unmute <username> to mute user");
-                    continue;
-                }
-                mutedList.remove(notAnnoyingClient);
-                continue;
-            }
-
+            //GETFILE COMMAND
             if (input.startsWith("!getfile")) {
                 String fileToRequest;
 
@@ -336,10 +321,43 @@ class ClientOptions {
 
                 Files.write(Paths.get("received_files", fileName), file);
                 System.out.print("You received a file: " + fileName + "\n");
-                continue;
             }
 
+            //MUTE COMMAND
+            if (input.startsWith("!mute")) {
+                String annoyingClient;
+                String[] split = input.split(" ", 2);
+                if (split.length == 2) {
+                    annoyingClient = split[1];
+                } else {
+                    System.out.println("Write !mute <username> to mute user");
+                    continue;
+                }
+                mutedList.add(annoyingClient);
+            }
+
+            //UNMUTE COMMAND
+            if (input.startsWith("!unmute")) {
+                String notAnnoyingClient;
+                String[] split = input.split(" ", 2);
+                if (split.length == 2) {
+                    notAnnoyingClient = split[1];
+                } else {
+                    System.out.println("Write !unmute <username> to mute user");
+                    continue;
+                }
+                mutedList.remove(notAnnoyingClient);
+            }
+
+            //UNKNOWN COMMAND
+            if (input.startsWith("!")) {
+                System.out.println("No such command found! Type \"!help\" for list of avaliable commands");
+            }
+
+
+            //SEND MESSAGE
             Commands.writeMessage(dataOut, input, MessageTypes.TEXT.value(), true);
+
         }
 
         System.out.println("\nExited chatroom\n");
