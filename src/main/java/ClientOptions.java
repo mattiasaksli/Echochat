@@ -4,20 +4,17 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Scanner;
-
-import static java.nio.file.Files.readAllLines;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 class ClientOptions {
     private boolean displayLogo = true;
     private boolean loggedIn;
     private boolean accountCreated;
-    private boolean ttsState = false;
     private String username;
-    private List<Message> historyAsMessages;
+    private boolean ttsState = false;
+    private List<Message> historyAsMessages = new ArrayList<>();
     private List<String> mutedList = Collections.synchronizedList(new ArrayList<>());
 
     void welcome() {
@@ -157,55 +154,67 @@ class ClientOptions {
 
     void connectToChatroom(ClientOptions clientOptions, Scanner sc, DataInputStream dataIn, DataOutputStream dataOut) throws Exception {
 
-        List<String> chatrooms = getChatroomNames(dataIn, dataOut);
-
-        String username = clientOptions.getUsername();
         String chatroomName = "";
 
-        if (chatrooms.size() == 0) {
-            System.out.println("\nNo chatrooms available! Would you like to create one?");
-            String response = "";
-            while (!response.equals("Y") && !response.equals("N")) {
-                System.out.println("Y/N");
-                response = sc.next();
-            }
+        while (true) {
 
-            if (response.equals("N")) {
-                return;
-            }
+            List<String> chatrooms = getChatroomNames(dataIn, dataOut);
 
-            chatroomName = createChatroom(sc);
-        }
+            String username = clientOptions.getUsername();
 
-        while (chatroomName.equals("")) {
 
-            System.out.println("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-            System.out.println("Please choose a chatroom from the list or create a new one (!CREATE)!\n");
-            for (int i = 1; i <= chatrooms.size(); i++) {
-                System.out.println("* " + chatrooms.get(i - 1));
-            }
+            if (chatrooms.size() == 0) {
+                System.out.println("\nNo chatrooms available! Would you like to create one?");
+                String response = "";
+                while (!response.equals("Y") && !response.equals("N")) {
+                    System.out.println("Y/N");
+                    response = sc.next();
+                }
 
-            System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-
-            chatroomName = sc.next();
-
-            if (chatroomName.equals("!CREATE")) {
-                chatroomName = createChatroom(sc);
-            } else if (!chatrooms.contains(chatroomName)) {
-                System.out.println("\nInvalid input!");
-                chatroomName = "";
-                if (dontTryAgain(sc)) {
+                if (response.equals("N")) {
                     return;
                 }
+
+                chatroomName = createChatroom(sc);
+            }
+
+            while (chatroomName.equals("")) {
+
+                System.out.println("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+                System.out.println("Please choose a chatroom from the list or create a new one (!CREATE)!\n");
+                for (int i = 1; i <= chatrooms.size(); i++) {
+                    System.out.println("* " + chatrooms.get(i - 1));
+                }
+
+                System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+
+                chatroomName = sc.next();
+
+                if (chatroomName.equals("!CREATE")) {
+                    chatroomName = createChatroom(sc);
+                } else if (!chatrooms.contains(chatroomName)) {
+                    System.out.println("\nInvalid input!");
+                    chatroomName = "";
+                    if (dontTryAgain(sc)) {
+                        return;
+                    }
+                }
+            }
+
+            Commands.writeChatroomName(dataOut, chatroomName);
+
+            int status = dataIn.readInt();
+
+            if (status == MessageTypes.CHATROOMS_ROOM_FULL.value()) {
+                System.out.println("\nThat chatroom is already full!");
+            } else if (status == MessageTypes.CHATROOMS_USER_CONNECTED.value()) {
+                chatroomName = chatroomName.split(";")[0];
+                System.out.println("\n" + username + " connected to " + chatroomName + "!");
+                break;
             }
         }
 
-        Commands.writeChatroomName(dataOut, chatroomName);
-
-        if (dataIn.readInt() == MessageTypes.CHATROOMS_USER_CONNECTED.value()) {
-            System.out.println("\n" + username + " connected to " + chatroomName + "!");
-            //TextSpeech.sayMessage("Welcome to Echoboys messenger boii!");
-        }
+        TextSpeech.sayMessage("Welcome to Echoboys messenger boii!");
 
         Thread update = new Thread(new Update(dataOut, dataIn, clientOptions));
         update.start();
@@ -216,182 +225,251 @@ class ClientOptions {
 
             String input = sc.nextLine().trim();
 
-            //END COMMAND
-            if (input.equals("END")) {
-                Commands.writeEnd(dataOut);
-                break;
-            }
+            if (input.startsWith("!")) {
 
-            //HELP COMMAND
-            if (input.startsWith("!help")) {
-                System.out.println("List of commands:");
-                System.out.println("\t !TTS enable to enable text to speech");
-                System.out.println("\t !TTS disable to disable text to speech");
-                System.out.println("\t !file <filename> to send a file");
-                System.out.println("\t !getfile <filename> to get a file");
-                System.out.println("\t !mute <username> to mute a person");
-                System.out.println("\t !unmute <username> to unmute a person");
-                System.out.println("\t !slack <message> to send a message to slack channel");
-            }
-
-            //SLACK COMMAND
-            if (input.startsWith("!slack")) {
-                String[] message = input.split(" ", 2);
-                if (message.length == 2) {
-                    String messageToSend = username + ": " + message[1];
-                    SlackUtils.sendMessage(messageToSend);
-                    System.out.println("Message sent to Slack!");
-                } else {
-                    System.out.println("Write !slack <message> to send a message!");
+                //END COMMAND
+                if (input.equals("!END")) {
+                    Commands.writeEnd(dataOut);
+                    break;
                 }
-            }
 
-            //TTS COMMAND
-            if (input.startsWith("!TTS")) {
-                String[] option = input.split(" ", 2);
-                if (option.length == 2) {
+                //HELP COMMAND
+                else if (input.equals("!help")) {
+                    System.out.println("List of commands:");
+                    System.out.println("\t !TTS enable to enable text to speech");
+                    System.out.println("\t !TTS disable to disable text to speech");
+                    System.out.println("\t !file <filename> to send a file");
+                    System.out.println("\t !getfile <filename> to get a file");
+                    System.out.println("\t !mute <username> to mute a person");
+                    System.out.println("\t !unmute <username> to unmute a person");
+                    System.out.println("\t !slack <message> to send a message to slack channel");
+                    System.out.println("\t !END to exit chatroom");
+                    System.out.println("\t !searchmsg <keyword> to find messages containing given keyword");
+                    System.out.println("\t !searchauthor <author> to find messages sent by given author");
+                    System.out.println("\t !searchdate <startdate> <enddate> (dd-MM-yyyy-HH:mm:ss) to find messages sent between the given times");
+                }
 
-                    String state = option[1];
-                    if (state.equals("enable")) {
-                        ttsState = true;
-                        System.out.println("TTS enabled!");
-
-                    } else if (state.equals("disable")) {
-                        ttsState = false;
-                        System.out.println("TTS disabled!");
-
+                //SLACK COMMAND
+                else if (input.startsWith("!slack")) {
+                    String[] message = input.split(" ", 2);
+                    if (message.length == 2) {
+                        String messageToSend = username + ": " + message[1];
+                        SlackUtils.sendMessage(messageToSend);
+                        System.out.println("Message sent to Slack!");
                     } else {
-                        System.out.println("Unknown option " + state + " ! Try again!");
+                        System.out.println("Write !slack <message> to send a message!");
                     }
-                } else {
-                    System.out.println("Write !TTS <enable/disable> to use TTS");
                 }
-            }
 
-            //FILE COMMAND
-            if (input.startsWith("!file")) {
+                //TTS COMMAND
+                else if (input.startsWith("!TTS")) {
+                    String[] option = input.split(" ", 2);
+                    if (option.length == 2) {
 
-                String[] getFile = input.split(" ", 2);
-                String fileName;
+                        String state = option[1];
+                        if (state.equals("enable")) {
+                            ttsState = true;
+                            System.out.println("TTS enabled!");
 
-                if (getFile.length == 2) {
-                    Path filePath = Paths.get(getFile[1]);
-                    fileName = filePath.getFileName().toString().trim();
-                    if (Files.isRegularFile(filePath)) {
-                        byte[] fileBytes = Files.readAllBytes(filePath);
-                        Commands.writeFile(dataOut, fileName, fileBytes);
+                        } else if (state.equals("disable")) {
+                            ttsState = false;
+                            System.out.println("TTS disabled!");
+
+                        } else {
+                            System.out.println("Unknown option " + state + " ! Try again!");
+                        }
                     } else {
-                        System.out.println("File " + fileName + " does not exist, try again");
+                        System.out.println("Write !TTS <enable/disable> to use TTS");
+                    }
+                }
+
+                //FILE COMMAND
+                else if (input.startsWith("!file")) {
+
+                    String[] getFile = input.split(" ", 2);
+                    String fileName;
+
+                    if (getFile.length == 2) {
+                        Path filePath = Paths.get(getFile[1]);
+                        fileName = filePath.getFileName().toString().trim();
+                        if (Files.isRegularFile(filePath)) {
+                            byte[] fileBytes = Files.readAllBytes(filePath);
+                            Commands.writeFile(dataOut, fileName, fileBytes);
+                        } else {
+                            System.out.println("File " + fileName + " does not exist, try again");
+                            continue;
+                        }
+                    } else {
+                        System.out.println("Write !file <file name> to send file");
                         continue;
                     }
-                } else {
-                    System.out.println("Write !file <file name> to send file");
-                    continue;
+
+                    System.out.println("File sent");
+
                 }
 
-                System.out.println("File sent");
+                //GETFILE COMMAND
+                else if (input.startsWith("!getfile")) {
+                    String fileToRequest;
 
-            }
+                    String[] split = input.split(" ", 2);
+                    if (split.length == 2) {
+                        fileToRequest = split[1];
+                    } else {
+                        System.out.println("Write !getfile <filename> to retrieve file from server.");
+                        continue;
+                    }
 
-            //GETFILE COMMAND
-            if (input.startsWith("!getfile")) {
-                String fileToRequest;
+                    Commands.writeFileUpdateRequest(dataOut);
+                    dataOut.writeUTF(fileToRequest);
 
-                String[] split = input.split(" ", 2);
-                if (split.length == 2) {
-                    fileToRequest = split[1];
-                } else {
-                    System.out.println("Write !getfile <filename> to retrieve file from server.");
-                    continue;
+                    int gotType = Commands.getType(dataIn);
+
+                    if (gotType == 0) {
+                        System.out.println("No such file in server. Try again");
+                        continue;
+                    }
+
+                    byte[] file = Commands.readFile(dataIn);
+                    String fileName = dataIn.readUTF();
+
+                    if (Files.notExists(Path.of("received_files"))) {
+                        Files.createDirectories(Path.of("received_files"));
+                    }
+
+                    Files.write(Paths.get("received_files", fileName), file);
+                    System.out.print("You received a file: " + fileName + "\n");
                 }
 
-                Commands.writeFileUpdateRequest(dataOut);
-                dataOut.writeUTF(fileToRequest);
-
-                int gotType = Commands.getType(dataIn);
-
-                if (gotType == 0) {
-                    System.out.println("No such file in server. Try again");
-                    continue;
+                //MUTE COMMAND
+                else if (input.startsWith("!mute")) {
+                    String annoyingClient;
+                    String[] split = input.split(" ", 2);
+                    if (split.length == 2) {
+                        annoyingClient = split[1];
+                    } else {
+                        System.out.println("Write !mute <username> to mute user");
+                        continue;
+                    }
+                    mutedList.add(annoyingClient);
                 }
 
-                byte[] file = Commands.readFile(dataIn);
-                String fileName = dataIn.readUTF();
-
-                if (Files.notExists(Path.of("received_files"))) {
-                    Files.createDirectories(Path.of("received_files"));
+                //UNMUTE COMMAND
+                else if (input.startsWith("!unmute")) {
+                    String notAnnoyingClient;
+                    String[] split = input.split(" ", 2);
+                    if (split.length == 2) {
+                        notAnnoyingClient = split[1];
+                    } else {
+                        System.out.println("Write !unmute <username> to mute user");
+                        continue;
+                    }
+                    mutedList.remove(notAnnoyingClient);
                 }
 
-                Files.write(Paths.get("received_files", fileName), file);
-                System.out.print("You received a file: " + fileName + "\n");
-            }
+                else if (input.startsWith("!search")) {
 
-            //MUTE COMMAND
-            if (input.startsWith("!mute")) {
-                String annoyingClient;
-                String[] split = input.split(" ", 2);
-                if (split.length == 2) {
-                    annoyingClient = split[1];
-                } else {
-                    System.out.println("Write !mute <username> to mute user");
-                    continue;
-                }
-                mutedList.add(annoyingClient);
-            }
+                    historyAsMessages.clear();
+                    List<String> history = Files.readAllLines(Path.of("chatrooms\\" + chatroomName + ".txt"));
 
-            //UNMUTE COMMAND
-            if (input.startsWith("!unmute")) {
-                String notAnnoyingClient;
-                String[] split = input.split(" ", 2);
-                if (split.length == 2) {
-                    notAnnoyingClient = split[1];
-                } else {
-                    System.out.println("Write !unmute <username> to mute user");
-                    continue;
-                }
-                mutedList.remove(notAnnoyingClient);
-            }
+                    for (int i = 1; i < history.size(); i++) {
+                        String[] split = history.get(i).split("\t", 3);
+                        Message message = new Message(Long.parseLong(split[0]), split[1], split[2]);
+                        historyAsMessages.add(message);
+                    }
 
-            //UNKNOWN COMMAND
-            if (input.startsWith("!")) {
-                System.out.println("No such command found! Type \"!help\" for list of avaliable commands");
-            }
+                    if (input.startsWith("!searchmsg")) {
 
-            if (input.startsWith("!search")) {
-                List<String> history = Files.readAllLines(Path.of("chatrooms\\" + chatroomName + ".txt"));
+                        String keyword;
+                        String[] split = input.split(" ", 2);
 
-                for (String s : history) {
-                    String[] split = s.split("\t", 3);
-                    Message message = new Message(Long.parseLong(split[0]), split[1], split[2]);
-                    historyAsMessages.add(message);
-                }
-            }
+                        if (split.length == 2) {
+                            keyword = split[1];
+                        } else {
+                            System.out.println("Write !searchmsg <keyword> to find messages containing given keyword");
+                            continue;
+                        }
 
-            if (input.startsWith("!searchmsg")) {
-                String keyword;
-                String[] split = input.split(" ", 2);
-                
-                if (split.length == 2) {
-                    keyword = split[1];
-                } else {
-                    System.out.println("Write !search <keyword> to find messages containing given keyword");
-                    continue;
-                }
+                        System.out.println("***** Messages containing searched word " + keyword + " *****");
+                        for (Message historyAsMessage : historyAsMessages) {
+                            if (historyAsMessage.getMessage().contains(keyword)) {
 
-                System.out.println("***** Messages containing searched word " + keyword + " *****");
-                for (Message historyAsMessage : historyAsMessages) {
-                    if (historyAsMessage.getMessage().contains(keyword)) {
+                                System.out.println(convertToMessage(historyAsMessage));
+
+                            }
+                        }
+                        System.out.println("***** End of search *****");
+                    }
+
+                    if (input.startsWith("!searchauthor")) {
+
+                        String author;
+                        String[] split = input.split(" ", 2);
+
+                        if (split.length == 2) {
+                            author = split[1];
+                        } else {
+                            System.out.println("Write !searchauthor <author> to find messages sent by given author");
+                            continue;
+                        }
+
+                        System.out.println("***** Messages sent by searched author " + author + " *****");
+                        for (Message historyAsMessage : historyAsMessages) {
+                            if (historyAsMessage.getAuthor().equals(author)) {
+
+                                System.out.println(convertToMessage(historyAsMessage));
+
+                            }
+                        }
+                        System.out.println("***** End of search *****");
 
                     }
+
+                    if (input.startsWith("!searchdate")) {
+
+                        Date startDate;
+                        Date endDate;
+                        String[] split = input.split(" ", 3);
+                        SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy-HH:mm:ss");
+
+                        if (split.length == 3) {
+                            try {
+                                startDate = formatter.parse(split[1]);
+                                endDate = formatter.parse(split[2]);
+                            } catch (ParseException e) {
+                                System.out.println("Write !searchdate <startdate> <enddate> (dd-MM-yyyy-HH:mm:ss) to find messages sent between given time");
+                                continue;
+                            }
+                        } else {
+                            System.out.println("Write !searchdate <startdate> <enddate> (dd-MM-yyyy-HH:mm:ss) to find messages sent between given time");
+                            continue;
+                        }
+
+                        System.out.println("***** Messages sent during searched time " + startDate + " " + endDate + " *****");
+                        for (Message historyAsMessage : historyAsMessages) {
+
+                            if (isWithinRange(new Date(historyAsMessage.getTimestamp()), startDate, endDate)) {
+
+                                System.out.println(convertToMessage(historyAsMessage));
+
+                            }
+                        }
+                        System.out.println("***** End of search *****");
+
+                    }
+
                 }
-                System.out.println("End of search");
 
+                //UNKNOWN COMMAND
+                else {
+                    System.out.println("No such command found! Type \"!help\" for list of available commands");
+                }
+
+                continue;
             }
-
 
             //SEND MESSAGE
             Commands.writeMessage(dataOut, input, MessageTypes.TEXT.value(), true);
-
         }
 
         System.out.println("\nExited chatroom\n");
@@ -400,15 +478,47 @@ class ClientOptions {
     private String createChatroom(Scanner sc) {
         String chatroomName = "";
         while (chatroomName.equals("")) {
-            System.out.println("\nPlease enter a chatroom name (no whitespace): ");
+            System.out.println("\nPlease enter a chatroom name (no whitespace):");
             chatroomName = sc.next();
 
-            if (chatroomName.equals("CREATE") || chatroomName.startsWith("!")) {
-                System.out.println("\nThat is not a valid name!");
+            if (chatroomName.startsWith("!")) {
+                System.out.println("\nThe chatroom name cannot begin with \"!\"");
+                chatroomName = "";
+            }
+            if (chatroomName.contains(";")) {
+                System.out.println("\nThe chatroom name cannot contain \";\"");
                 chatroomName = "";
             }
         }
-        return chatroomName;
+
+        System.out.println("Please enter the max amount of users that the chatroom can have (0 for no limit):");
+        int size = -1;
+        while (size < 0) {
+            try {
+                size = Integer.parseInt(sc.next());
+                if (size < 0) {
+                    System.out.println("The number cannot be negative!");
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a number!");
+            }
+        }
+
+        return chatroomName + ";" + size;
+    }
+
+    private String convertToMessage(Message message) {
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date resultDate = new Date(message.getTimestamp());
+        String messageString = "[" + sdf.format(resultDate) + "] " + message.getAuthor() + " >>> " + message.getMessage();
+
+        return messageString;
+
+    }
+
+    private boolean isWithinRange(Date date, Date startDate, Date endDate) {
+        return date.after(startDate) && date.before(endDate);
     }
 
     boolean loggedIn() {

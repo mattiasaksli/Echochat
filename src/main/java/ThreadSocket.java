@@ -96,7 +96,7 @@ public class ThreadSocket implements Runnable {
                             long timestamp = m.getTimestamp();
                             String author = m.getAuthor();
 
-                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy-HH:mm:ss");
                             Date resultDate = new Date(timestamp);
                             String messageServerSide = "[" + sdf.format(resultDate) + "] " + author + " >>> " + message;
 

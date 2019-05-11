@@ -34,7 +34,7 @@ public class Update implements Runnable {
 
                     gotType = Commands.getType(dataIn);
                     long timestamp = Long.parseLong(Commands.readMessage(dataIn, gotType).trim());
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
                     Date resultDate = new Date(timestamp);
 
                     gotType = Commands.getType(dataIn);
