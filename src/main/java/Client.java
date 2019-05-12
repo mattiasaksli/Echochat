@@ -27,15 +27,9 @@ public class Client {
     public static void main(String[] args) throws Exception {
 
         int port = 1337;
+        String IP = args[0];
 
         Scanner sc = new Scanner(System.in);
-        String IP;
-        if (args.length == 0) {
-            System.out.print("Please enter the server IP: ");
-            IP = sc.next();
-        } else {
-            IP = args[0];
-        }
 
         System.out.println("\nConnecting to server...");
 

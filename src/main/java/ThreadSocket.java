@@ -123,7 +123,7 @@ public class ThreadSocket implements Runnable {
                     System.out.println(fileName);
 
                     if (Files.exists(Path.of("file_storage", fileName))) {
-                        Path filePath = Paths.get("file_storage\\" + fileName);
+                        Path filePath = Paths.get("file_storage", fileName);
                         fileName = filePath.getFileName().toString();
                         byte[] fileBytes = Files.readAllBytes(filePath);
                         Commands.writeFile(dataOut, fileName, fileBytes);
@@ -231,8 +231,6 @@ public class ThreadSocket implements Runnable {
 
                     Message message = new Message(System.currentTimeMillis(), username, clientMessage);
 
-                    //chatroom.addToMessageList(message);
-
                     for (String key : chatroom.getUserAndMessages().keySet()) {
                         if (!key.equals(username)) {
                             chatroom.addMessageToUser(key, message);
@@ -252,9 +250,7 @@ public class ThreadSocket implements Runnable {
                     FileMessage file = new FileMessage(System.currentTimeMillis(), username, fileMessage, fileName);
 
                     if (!Files.exists(Path.of("file_storage"))) {
-                        if (!new File("file_storage").mkdir()) {
-                            throw new RuntimeException("Failed to create folder file_storage!");
-                        }
+                        Files.createDirectories(Path.of("file_storage"));
                     }
 
                     Files.write(Paths.get("file_storage", fileName), file.getFile());
@@ -294,7 +290,7 @@ public class ThreadSocket implements Runnable {
         users.remove(username);
         System.out.println("ended connection with user " + username + " at " + socket);
 
-        if (!email.equals("!NONE")) {
+        if (!email.equals("!NONE") && !chatroomsParticipatingIn.isEmpty()) {
             NotificationSender ns = new NotificationSender();
             Thread noteSendThread = new Thread(ns);
 
@@ -359,16 +355,17 @@ public class ThreadSocket implements Runnable {
                     username = userName;
                     users.add(username);
                     email = split[2];
+
+                    if (userNotifier.containsKey(username)) {
+                        userNotifier.get(username).stop();
+                        userNotifierThread.get(username).join();
+                    }
+
                     return MessageTypes.LOGIN_SUCCESS.value();
                 } else {
                     return MessageTypes.LOGIN_WRONG_PASSWORD.value();
                 }
             }
-        }
-
-        if (userNotifier.containsKey(username)) {
-            userNotifier.get(username).stop();
-            userNotifierThread.get(username).join();
         }
 
         return MessageTypes.LOGIN_WRONG_USERNAME.value();
