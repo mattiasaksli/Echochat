@@ -23,6 +23,7 @@ public class ThreadSocket implements Runnable {
     private List<Chatroom> chatroomsParticipatingIn = new ArrayList<>();
     private Map<String, NotificationSender> userNotifier;
     private Map<String, Thread> userNotifierThread;
+    private List<Message> historyAsMessages = new ArrayList<>();
 
     ThreadSocket(List<Chatroom> chatrooms, List<String> users, Socket ss, Map<String, NotificationSender> userNotifier,
                  Map<String, Thread> userNotifierThread) {
@@ -132,6 +133,69 @@ public class ThreadSocket implements Runnable {
                         continue;
                     }
 
+                }
+
+                if (type == MessageTypes.SEARCH_REQ.value()) {
+
+                    int searchType = dataIn.readInt();
+
+                    List<String> history = Files.readAllLines(Path.of("chatrooms\\" + chatroom.getName() + ".txt"));
+
+                    for (int i = 1; i < history.size(); i++) {
+                        String[] split = history.get(i).split("\t", 3);
+                        Message message = new Message(Long.parseLong(split[0]), split[1], split[2]);
+                        historyAsMessages.add(message);
+                    }
+
+                    if (searchType == MessageTypes.SEARCH_MESSAGE_REQ.value()) {
+
+                        String keyword = dataIn.readUTF();
+
+                        chatroom.getUserAndMessages().get(username).add(new Message(System.currentTimeMillis(), "EchoBot", "***** Messages containing searched word " + keyword + " *****"));
+                        for (Message historyAsMessage : historyAsMessages) {
+                            if (historyAsMessage.getMessage().contains(keyword)) {
+
+                                chatroom.getUserAndMessages().get(username).add(historyAsMessage);
+
+                            }
+                        }
+                        chatroom.getUserAndMessages().get(username).add(new Message(System.currentTimeMillis(), "EchoBot", "***** End of search *****"));
+
+                    } else if (searchType == MessageTypes.SEARCH_AUTHOR_REQ.value()) {
+
+                        String author = dataIn.readUTF();
+
+                        chatroom.getUserAndMessages().get(username).add(new Message(System.currentTimeMillis(), "EchoBot", "***** Messages sent by user " + author + " *****"));
+                        for (Message historyAsMessage : historyAsMessages) {
+                            if (historyAsMessage.getAuthor().equals(author)) {
+
+                                chatroom.getUserAndMessages().get(username).add(historyAsMessage);
+
+                            }
+                        }
+                        chatroom.getUserAndMessages().get(username).add(new Message(System.currentTimeMillis(), "EchoBot", "***** End of search *****"));
+
+                    } else if (searchType == MessageTypes.SEARCH_DATE_REQ.value()) {
+
+                        SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy-HH:mm:ss");
+
+                        Date parsedStartDate = formatter.parse(dataIn.readUTF());
+                        Date parsedEndDate = formatter.parse(dataIn.readUTF());
+
+                        chatroom.getUserAndMessages().get(username).add(new Message(System.currentTimeMillis(), "EchoBot", "***** Messages sent between given times " + parsedStartDate + " and " + parsedEndDate + " *****"));
+                        for (Message historyAsMessage : historyAsMessages) {
+
+                            if (isWithinRange(new Date(historyAsMessage.getTimestamp()), parsedStartDate, parsedEndDate)) {
+
+                                chatroom.getUserAndMessages().get(username).add(historyAsMessage);
+
+                            }
+                        }
+                        chatroom.getUserAndMessages().get(username).add(new Message(System.currentTimeMillis(), "EchoBot", "***** End of search *****"));
+
+                    }
+
+                    historyAsMessages.clear();
 
                 }
 
@@ -460,6 +524,10 @@ public class ThreadSocket implements Runnable {
         String line = message.getTimestamp() + "\t" + message.getAuthor() + "\t" + message.getMessage();
         Files.write(chatroom.getPath(), Collections.singletonList(line), StandardCharsets.UTF_8,
                 StandardOpenOption.APPEND);
+    }
+
+    private boolean isWithinRange(Date date, Date startDate, Date endDate) {
+        return date.after(startDate) && date.before(endDate);
     }
 
 }

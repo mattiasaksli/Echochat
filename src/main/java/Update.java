@@ -57,7 +57,6 @@ public class Update implements Runnable {
             } catch (InterruptedException e) {
                 break;
             } catch (Exception e) {
-                e.printStackTrace();
                 throw new RuntimeException();
             }
         }

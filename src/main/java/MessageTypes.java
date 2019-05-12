@@ -3,8 +3,8 @@ public enum MessageTypes {
     END_SESSION(-2),
     EXIT_CHATROOM(-1),
     TEXT(1),
-    UPDATE_REQ(5),
     FILE_UPDATE_REQ(4),
+    UPDATE_REQ(5),
     SEND_FILE(6),
     CHATROOMS_LIST_REQ(50),
     CHATROOM_CONNECT_USER(51),
@@ -20,7 +20,11 @@ public enum MessageTypes {
     LOGIN_WRONG_USERNAME(202),
     LOGIN_WRONG_PASSWORD(203),
     LOGIN_MISSING_DB(204),
-    LOGIN_USER_ALREADY_IN(205);
+    LOGIN_USER_ALREADY_IN(205),
+    SEARCH_REQ(300),
+    SEARCH_MESSAGE_REQ(301),
+    SEARCH_AUTHOR_REQ(302),
+    SEARCH_DATE_REQ(303);
 
     private int typeValue;
 

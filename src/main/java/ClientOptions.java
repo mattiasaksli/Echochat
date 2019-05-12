@@ -14,7 +14,6 @@ class ClientOptions {
     private boolean accountCreated;
     private String username;
     private boolean ttsState = false;
-    private List<Message> historyAsMessages = new ArrayList<>();
     private List<String> mutedList = Collections.synchronizedList(new ArrayList<>());
 
     void welcome() {
@@ -369,95 +368,60 @@ class ClientOptions {
                     mutedList.remove(notAnnoyingClient);
                 }
 
-                else if (input.startsWith("!search")) {
+                else if (input.startsWith("!searchmsg")) {
 
-                    historyAsMessages.clear();
-                    List<String> history = Files.readAllLines(Path.of("chatrooms\\" + chatroomName + ".txt"));
+                    String keyword;
+                    String[] split = input.split(" ", 2);
 
-                    for (int i = 1; i < history.size(); i++) {
-                        String[] split = history.get(i).split("\t", 3);
-                        Message message = new Message(Long.parseLong(split[0]), split[1], split[2]);
-                        historyAsMessages.add(message);
+                    if (split.length == 2) {
+                        dataOut.writeInt(MessageTypes.SEARCH_REQ.value());
+                        keyword = split[1];
+                        dataOut.writeInt(MessageTypes.SEARCH_MESSAGE_REQ.value());
+                        dataOut.writeUTF(keyword);
+                    } else {
+                        System.out.println("Write !searchmsg <keyword> to find messages containing given keyword");
+                        continue;
                     }
 
-                    if (input.startsWith("!searchmsg")) {
+                } else if (input.startsWith("!searchauthor")) {
 
-                        String keyword;
-                        String[] split = input.split(" ", 2);
+                    String author;
+                    String[] split = input.split(" ", 2);
 
-                        if (split.length == 2) {
-                            keyword = split[1];
-                        } else {
-                            System.out.println("Write !searchmsg <keyword> to find messages containing given keyword");
-                            continue;
-                        }
-
-                        System.out.println("***** Messages containing searched word " + keyword + " *****");
-                        for (Message historyAsMessage : historyAsMessages) {
-                            if (historyAsMessage.getMessage().contains(keyword)) {
-
-                                System.out.println(convertToMessage(historyAsMessage));
-
-                            }
-                        }
-                        System.out.println("***** End of search *****");
+                    if (split.length == 2) {
+                        dataOut.writeInt(MessageTypes.SEARCH_REQ.value());
+                        author = split[1];
+                        dataOut.writeInt(MessageTypes.SEARCH_AUTHOR_REQ.value());
+                        dataOut.writeUTF(author);
+                    } else {
+                        System.out.println("Write !searchauthor <author> to find messages sent by given author");
+                        continue;
                     }
 
-                    if (input.startsWith("!searchauthor")) {
+                } else if (input.startsWith("!searchdate")) {
 
-                        String author;
-                        String[] split = input.split(" ", 2);
+                    String startDate;
+                    String endDate;
+                    String[] split = input.split(" ", 3);
+                    SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy-HH:mm:ss");
 
-                        if (split.length == 2) {
-                            author = split[1];
-                        } else {
-                            System.out.println("Write !searchauthor <author> to find messages sent by given author");
-                            continue;
-                        }
-
-                        System.out.println("***** Messages sent by searched author " + author + " *****");
-                        for (Message historyAsMessage : historyAsMessages) {
-                            if (historyAsMessage.getAuthor().equals(author)) {
-
-                                System.out.println(convertToMessage(historyAsMessage));
-
-                            }
-                        }
-                        System.out.println("***** End of search *****");
-
-                    }
-
-                    if (input.startsWith("!searchdate")) {
-
-                        Date startDate;
-                        Date endDate;
-                        String[] split = input.split(" ", 3);
-                        SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy-HH:mm:ss");
-
-                        if (split.length == 3) {
-                            try {
-                                startDate = formatter.parse(split[1]);
-                                endDate = formatter.parse(split[2]);
-                            } catch (ParseException e) {
-                                System.out.println("Write !searchdate <startdate> <enddate> (dd-MM-yyyy-HH:mm:ss) to find messages sent between given time");
-                                continue;
-                            }
-                        } else {
+                    if (split.length == 3) {
+                        try {
+                            dataOut.writeInt(MessageTypes.SEARCH_REQ.value());
+                            startDate = split[1];
+                            endDate = split[2];
+                            Date parsedStartDate = formatter.parse(startDate);
+                            Date parsedEndDate = formatter.parse(endDate); // Tests if these can even be parsed before sending to the server
+                            dataOut.writeInt(MessageTypes.SEARCH_DATE_REQ.value());
+                            dataOut.writeUTF(startDate);
+                            dataOut.writeUTF(endDate);
+                        } catch (ParseException e) {
                             System.out.println("Write !searchdate <startdate> <enddate> (dd-MM-yyyy-HH:mm:ss) to find messages sent between given time");
                             continue;
                         }
-
-                        System.out.println("***** Messages sent during searched time " + startDate + " " + endDate + " *****");
-                        for (Message historyAsMessage : historyAsMessages) {
-
-                            if (isWithinRange(new Date(historyAsMessage.getTimestamp()), startDate, endDate)) {
-
-                                System.out.println(convertToMessage(historyAsMessage));
-
-                            }
-                        }
-                        System.out.println("***** End of search *****");
-
+                    } else {
+                        System.out.println("Write !searchdate <startdate> <enddate> (dd-MM-yyyy-HH:mm:ss) to find messages sent between given time");
+                        continue;
                     }
 
                 }
@@ -507,20 +471,6 @@ class ClientOptions {
         }
 
         return chatroomName + ";" + size;
-    }
-
-    private String convertToMessage(Message message) {
-
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Date resultDate = new Date(message.getTimestamp());
-        String messageString = "[" + sdf.format(resultDate) + "] " + message.getAuthor() + " >>> " + message.getMessage();
-
-        return messageString;
-
-    }
-
-    private boolean isWithinRange(Date date, Date startDate, Date endDate) {
-        return date.after(startDate) && date.before(endDate);
     }
 
     boolean loggedIn() {
