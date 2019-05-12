@@ -40,6 +40,10 @@ public class ThreadSocket implements Runnable {
              DataInputStream dataIn = new DataInputStream(socket.getInputStream());
              DataOutputStream dataOut = new DataOutputStream(socket.getOutputStream())) {
             System.out.println("client connected");
+            CurseFilter cf = new CurseFilter();
+            List<String> cursesLocal = cf.getLocalCurseList();
+            List<String> cursesFromWeb = cf.getCurseList();
+
 
             while (true) {
 
@@ -223,7 +227,7 @@ public class ThreadSocket implements Runnable {
 
                 if (type == MessageTypes.TEXT.value()) {
 
-                    String clientMessage = CurseFilter.replaceCurseWordsWithAsterisks(dataIn.readUTF());
+                    String clientMessage = cf.replaceCurseWordsWithAsterisks(dataIn.readUTF(), cursesLocal, cursesFromWeb);
 
                     if (clientMessage.isBlank()) {
                         continue;
