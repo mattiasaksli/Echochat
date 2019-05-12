@@ -143,7 +143,7 @@ public class ThreadSocket implements Runnable {
 
                     int searchType = dataIn.readInt();
 
-                    List<String> history = Files.readAllLines(Path.of("chatrooms\\" + chatroom.getName() + ".txt"));
+                    List<String> history = Files.readAllLines(Path.of("chatrooms", chatroom.getName() + ".txt"));
 
                     for (int i = 1; i < history.size(); i++) {
                         String[] split = history.get(i).split("\t", 3);
