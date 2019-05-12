@@ -146,6 +146,8 @@ public class ThreadSocket implements Runnable {
                     }
                     writeMessageToFile(message);
                     System.out.println("user " + username + " exited chatroom " + chatroom.getName());
+                    chatroom.getUserAndMessages().remove(username);
+                    users.remove(username);
                     continue;
                 }
 

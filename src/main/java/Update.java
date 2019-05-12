@@ -19,7 +19,7 @@ public class Update implements Runnable {
     @Override
     public void run() {
 
-        while (true) {
+        while (!Thread.interrupted()) {
             try {
                 // TEXTS
 
@@ -53,6 +53,8 @@ public class Update implements Runnable {
 
             } catch (SocketException e) {
                 System.out.println("Connection terminated"); // TODO fix this.
+                break;
+            } catch (InterruptedException e) {
                 break;
             } catch (Exception e) {
                 e.printStackTrace();

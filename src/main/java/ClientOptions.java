@@ -230,6 +230,8 @@ class ClientOptions {
                 //END COMMAND
                 if (input.equals("!END")) {
                     Commands.writeEnd(dataOut);
+                    update.interrupt();
+                    update.join();
                     break;
                 }
 
