@@ -286,6 +286,7 @@ public class ThreadSocket implements Runnable {
                 System.out.println("could not write to file!");
             }
             System.out.println(e.getMessage());
+            users.remove(username);
             throw new RuntimeException();
         }
 
