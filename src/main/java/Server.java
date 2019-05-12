@@ -1,7 +1,6 @@
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
@@ -46,9 +45,7 @@ public class Server {
         Map<String, Thread> userNotifierThread = new HashMap<>();
 
         if (!Files.exists(Path.of("chatrooms"))) {
-            if (!new File("chatrooms").mkdir()) {
-                throw new RuntimeException("Failed to create folder chatrooms!");
-            }
+            Files.createDirectories(Path.of("chatrooms"));
         }
 
         SSLContext ctx = getSSLContext();

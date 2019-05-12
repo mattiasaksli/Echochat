@@ -1,6 +1,7 @@
 import com.google.common.base.Strings;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -9,28 +10,32 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class CurseFilter {
+class CurseFilter {
+
+    List<String> cursesFromWeb;
+    List<String> cursesLocal;
 
 
-    private static List<String> getCurseList() throws IOException {
+    List<String> getCurseList() throws IOException {
         URL url = new URL("http://www.bannedwordlist.com/lists/swearWords.txt");
-        byte[] bytes = url.openStream().readAllBytes();
+        InputStream inputStream = url.openStream();
+        byte[] bytes = inputStream.readAllBytes();
+        inputStream.close();
+
         String[] lines = new String(bytes, StandardCharsets.UTF_8).trim().split("\\r\\n");
         return new ArrayList<>(Arrays.asList(lines));
     }
 
-    private static List<String> getLocalCurseList() throws IOException {
+    List<String> getLocalCurseList() throws IOException {
         if (Files.notExists(Path.of("swearwords.txt")))
             Files.createFile(Path.of("swearwords.txt"));
         return Files.readAllLines(Path.of("swearwords.txt"));
     }
 
-    public static String replaceCurseWordsWithAsterisks(String message) throws IOException {
+String replaceCurseWordsWithAsterisks(String message, List<String> cursesLocal, List<String> cursesFromWeb) throws IOException {
         StringBuilder outgoingMessage = new StringBuilder();
-        List<String> curses = getCurseList();
-        List<String> cursesLocal = getLocalCurseList();
         for (String string : message.split(" ")) {
-            if (cursesLocal.contains(string.toLowerCase()) || curses.contains(string.toLowerCase())) {
+            if (cursesLocal.contains(string.toLowerCase()) || cursesFromWeb.contains(string.toLowerCase())) {
                 String sone = Strings.repeat("*", string.length());
                 outgoingMessage.append(" ").append(sone);
 
@@ -41,7 +46,7 @@ public class CurseFilter {
     }
 
 
-    public static void addCurseWords(String word) throws IOException {
+    void addCurseWords(String word) throws IOException {
         if (Files.notExists(Path.of("swearwords.txt")))
             Files.createFile(Path.of("swearwords.txt"));
         List<String> curseList = Files.readAllLines(Path.of("swearwords.txt"));
@@ -50,7 +55,7 @@ public class CurseFilter {
         System.out.println("Curse word added to blocked list!");
     }
 
-    public static void removeCurseWords(String word) throws IOException {
+    void removeCurseWords(String word) throws IOException {
         if (Files.notExists(Path.of("swearwords.txt")))
             return;
         List<String> curseList = Files.readAllLines(Path.of("swearwords.txt"));

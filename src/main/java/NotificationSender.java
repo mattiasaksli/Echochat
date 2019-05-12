@@ -4,6 +4,8 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -44,9 +46,9 @@ public class NotificationSender implements Runnable {
         while (!exit) {
 
             try {
-                long seconds = 0;
+                long seconds = 30;
                 long minutes = 0;
-                long hours = 6;
+                long hours = 0;
                 long days = 0;
                 long time = 1000 * seconds + 1000 * 60 * minutes + 1000 * 60 * 60 * hours + 1000 * 60 * 60 * 24 * days;
                 Thread.sleep(time);
@@ -80,9 +82,12 @@ public class NotificationSender implements Runnable {
                 if (emailMessage.length() != 0) {
                     emailMessage.insert(0, "<h3>Conversations in the chatrooms you are associated with:</h3>");
 
-                    sendEmail(emailMessage.toString());
+                    try {
+                        sendEmail(emailMessage.toString());
+                    } catch (Exception e) {
+                        System.out.println("Failed to send email to user " + username + "! Reason: " + e.getMessage());
+                    }
                 }
-
 
             } catch (InterruptedException e) {
                 System.out.println("Notification thread for user " + username + " stopped working!");
@@ -90,12 +95,26 @@ public class NotificationSender implements Runnable {
             }
         }
 
-        System.out.println("Notification thread closed for user " + username);
+        System.out.println("notification thread closed successfully for user " + username);
     }
 
-    private void sendEmail(String body) {
-        final String fromEmail = "echo.notifications@gmail.com";
-        final String password = "ECHOBOT1337";
+    // From https://www.journaldev.com/2532/javamail-example-send-mail-in-java-smtp
+    private void sendEmail(String body) throws Exception {
+        final String fromEmail;
+        final String password;
+
+        try (InputStream is = NotificationSender.class.getClassLoader().getResourceAsStream("config.properties")) {
+            Properties prop = new Properties();
+
+            if (is != null) {
+                prop.load(is);
+            } else {
+                throw new FileNotFoundException("config.properites not found!");
+            }
+
+            fromEmail = prop.getProperty("fromEmail");
+            password = prop.getProperty("password");
+        }
 
         System.out.println("sending email to " + username + "...");
         Properties props = new Properties();
@@ -114,32 +133,30 @@ public class NotificationSender implements Runnable {
         createMailStuff(session, body);
     }
 
-    private void createMailStuff(Session session, String body) {
-        try {
-            MimeMessage msg = new MimeMessage(session);
+    private void createMailStuff(Session session, String body) throws Exception {
 
-            msg.addHeader("Content-type", "text/HTML; charset=UTF-8");
-            msg.addHeader("format", "flowed");
-            msg.addHeader("Content-Transfer-Encoding", "8bit");
+        MimeMessage msg = new MimeMessage(session);
 
-            msg.setFrom(new InternetAddress("echo.notifications@gmail.com", "NoReply-EchoBot"));
+        msg.addHeader("Content-type", "text/HTML; charset=UTF-8");
+        msg.addHeader("format", "flowed");
+        msg.addHeader("Content-Transfer-Encoding", "8bit");
 
-            msg.setReplyTo(InternetAddress.parse("echo.notifications@gmail.com", false));
+        msg.setFrom(new InternetAddress("echo.notifications@gmail.com", "NoReply-EchoBot"));
 
-            msg.setSubject("Echoboys Chat Notification", "UTF-8");
+        msg.setReplyTo(InternetAddress.parse("echo.notifications@gmail.com", false));
 
-            msg.setText(body, "UTF-8");
+        msg.setSubject("Echoboys Chat Notification", "UTF-8");
 
-            msg.setContent(body, "text/html");
+        msg.setText(body, "UTF-8");
 
-            msg.setSentDate(new Date());
+        msg.setContent(body, "text/html");
 
-            msg.setRecipients(javax.mail.Message.RecipientType.TO, InternetAddress.parse(email, false));
-            Transport.send(msg);
+        msg.setSentDate(new Date());
 
-            System.out.println("email sent to " + username);
-        } catch (Exception e) {
-            System.out.println("Failed to send notification email to user " + username + "!");
-        }
+        msg.setRecipients(javax.mail.Message.RecipientType.TO, InternetAddress.parse(email, false));
+        Transport.send(msg);
+
+        System.out.println("email sent to " + username);
+
     }
 }
