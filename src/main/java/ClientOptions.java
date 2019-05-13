@@ -248,6 +248,7 @@ class ClientOptions {
                     System.out.println("\t !searchmsg <keyword> to find messages containing given keyword");
                     System.out.println("\t !searchauthor <author> to find messages sent by given author");
                     System.out.println("\t !searchdate <startdate> <enddate> (dd-MM-yyyy-HH:mm:ss) to find messages sent between the given times");
+
                 }
 
                 //SLACK COMMAND
@@ -255,8 +256,12 @@ class ClientOptions {
                     String[] message = input.split(" ", 2);
                     if (message.length == 2) {
                         String messageToSend = username + ": " + message[1];
-                        SlackUtils.sendMessage(messageToSend);
-                        System.out.println("Message sent to Slack!");
+                        Integer sentMessageResponseCode = SlackUtils.sendMessage(messageToSend);
+                        if (sentMessageResponseCode != 200) {
+                            System.out.print("Something went wrong! Slack response code: ");
+                            System.out.println(sentMessageResponseCode);
+                        } else
+                            System.out.println("Message sent to Slack!");
                     } else {
                         System.out.println("Write !slack <message> to send a message!");
                     }
@@ -366,9 +371,7 @@ class ClientOptions {
                         continue;
                     }
                     mutedList.remove(notAnnoyingClient);
-                }
-
-                else if (input.startsWith("!searchmsg")) {
+                } else if (input.startsWith("!searchmsg")) {
 
                     String keyword;
                     String[] split = input.split(" ", 2);
