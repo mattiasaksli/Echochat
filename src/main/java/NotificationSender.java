@@ -46,10 +46,10 @@ public class NotificationSender implements Runnable {
         while (!exit) {
 
             try {
-                long seconds = 30;
+                long seconds = 0;
                 long minutes = 0;
                 long hours = 0;
-                long days = 0;
+                long days = 1;
                 long time = 1000 * seconds + 1000 * 60 * minutes + 1000 * 60 * 60 * hours + 1000 * 60 * 60 * 24 * days;
                 Thread.sleep(time);
 

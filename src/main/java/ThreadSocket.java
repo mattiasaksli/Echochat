@@ -70,10 +70,6 @@ public class ThreadSocket implements Runnable {
                     int status = connectUserToChatroom(dataIn);
                     dataOut.writeInt(status);
 
-                    if (status == MessageTypes.CHATROOMS_ROOM_FULL.value()) {
-                        continue;
-                    }
-
                     Message message = new Message(System.currentTimeMillis(), "EchoBot",
                             "[" + username.toUpperCase() + " connected to chatroom " +
                                     chatroom.getName().toUpperCase() + "]");
@@ -288,22 +284,22 @@ public class ThreadSocket implements Runnable {
             System.out.println(e.getMessage());
             users.remove(username);
             throw new RuntimeException();
-        }
+        } finally {
+            users.remove(username);
+            System.out.println("ended connection with user " + username + " at " + socket);
 
-        users.remove(username);
-        System.out.println("ended connection with user " + username + " at " + socket);
+            if (!email.equals("!NONE") && !chatroomsParticipatingIn.isEmpty()) {
+                NotificationSender ns = new NotificationSender();
+                Thread noteSendThread = new Thread(ns);
 
-        if (!email.equals("!NONE") && !chatroomsParticipatingIn.isEmpty()) {
-            NotificationSender ns = new NotificationSender();
-            Thread noteSendThread = new Thread(ns);
-
-            ns.setEmail(email);
-            ns.setUsername(username);
-            ns.setChatrooms(chatroomsParticipatingIn);
-            noteSendThread.start();
-            userNotifier.put(username, ns);
-            userNotifierThread.put(username, noteSendThread);
-            System.out.println("started email notification sender");
+                ns.setEmail(email);
+                ns.setUsername(username);
+                ns.setChatrooms(chatroomsParticipatingIn);
+                noteSendThread.start();
+                userNotifier.put(username, ns);
+                userNotifierThread.put(username, noteSendThread);
+                System.out.println("started email notification sender");
+            }
         }
     }
 
@@ -423,7 +419,8 @@ public class ThreadSocket implements Runnable {
         for (Chatroom cr : chatrooms) {
             int crSize = cr.getSize();
             int crUsers = cr.getUserAndMessages().size();
-            if (crSize == 0 || crUsers < crSize) {
+            boolean doesUserBelongToChatroom = cr.getUserAndMessages().containsKey(username);
+            if (crSize == 0 || crUsers < crSize || doesUserBelongToChatroom) {
                 chatroomsToSend.add(cr);
             }
         }
@@ -454,13 +451,6 @@ public class ThreadSocket implements Runnable {
 
         for (Chatroom cr : chatrooms) {
             if (cr.getName().equals(chatroomName)) {
-                int crSize = cr.getSize();
-                int crUsers = cr.getUserAndMessages().size();
-
-                if (crSize != 0 && crSize == crUsers) {
-                    return MessageTypes.CHATROOMS_ROOM_FULL.value();
-                }
-
                 this.chatroom = cr;
 
                 List<String> chatroomContents = Files.readAllLines(Path.of("chatrooms", chatroomName + ".txt"));
@@ -475,8 +465,6 @@ public class ThreadSocket implements Runnable {
                     chatroom.addToMessageList(message);
                 }
 
-
-                chatroom.addUserToChatroom(username);
                 isChatroomInList = true;
                 break;
             }
@@ -485,6 +473,8 @@ public class ThreadSocket implements Runnable {
         if (!isChatroomInList) {
             createChatroom(chatroomName, chatroomSize);
         }
+
+        chatroom.addUserToChatroom(username);
 
         Path path = Path.of("chatrooms", chatroomName + "_users.txt");
         List<String> usernames = Files.readAllLines(path);
@@ -517,7 +507,6 @@ public class ThreadSocket implements Runnable {
         Chatroom cr = new Chatroom(chatroomName, path, size);
         this.chatroom = cr;
         chatrooms.add(cr);
-        chatroom.addUserToChatroom(username);
     }
 
     private void writeMessageToFile(Message message) throws IOException {

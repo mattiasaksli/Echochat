@@ -155,62 +155,54 @@ class ClientOptions {
 
         String chatroomName = "";
 
-        while (true) {
+        List<String> chatrooms = getChatroomNames(dataIn, dataOut);
 
-            List<String> chatrooms = getChatroomNames(dataIn, dataOut);
+        String username = clientOptions.getUsername();
 
-            String username = clientOptions.getUsername();
+        if (chatrooms.size() == 0) {
+            System.out.println("\nNo chatrooms available! Would you like to create one?");
+            String response = "";
+            while (!response.equals("Y") && !response.equals("N")) {
+                System.out.println("Y/N");
+                response = sc.next();
+            }
 
+            if (response.equals("N")) {
+                return;
+            }
 
-            if (chatrooms.size() == 0) {
-                System.out.println("\nNo chatrooms available! Would you like to create one?");
-                String response = "";
-                while (!response.equals("Y") && !response.equals("N")) {
-                    System.out.println("Y/N");
-                    response = sc.next();
-                }
+            chatroomName = createChatroom(sc);
+        }
 
-                if (response.equals("N")) {
+        while (chatroomName.equals("")) {
+
+            System.out.println("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            System.out.println("Please choose a chatroom from the list or create a new one (!CREATE)!\n");
+            for (int i = 1; i <= chatrooms.size(); i++) {
+                System.out.println("* " + chatrooms.get(i - 1));
+            }
+
+            System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+
+            chatroomName = sc.next();
+
+            if (chatroomName.equals("!CREATE")) {
+                chatroomName = createChatroom(sc);
+            } else if (!chatrooms.contains(chatroomName)) {
+                System.out.println("\nInvalid input!");
+                chatroomName = "";
+                if (dontTryAgain(sc)) {
                     return;
                 }
-
-                chatroomName = createChatroom(sc);
             }
+        }
 
-            while (chatroomName.equals("")) {
+        Commands.writeChatroomName(dataOut, chatroomName);
 
-                System.out.println("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-                System.out.println("Please choose a chatroom from the list or create a new one (!CREATE)!\n");
-                for (int i = 1; i <= chatrooms.size(); i++) {
-                    System.out.println("* " + chatrooms.get(i - 1));
-                }
-
-                System.out.println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-
-                chatroomName = sc.next();
-
-                if (chatroomName.equals("!CREATE")) {
-                    chatroomName = createChatroom(sc);
-                } else if (!chatrooms.contains(chatroomName)) {
-                    System.out.println("\nInvalid input!");
-                    chatroomName = "";
-                    if (dontTryAgain(sc)) {
-                        return;
-                    }
-                }
-            }
-
-            Commands.writeChatroomName(dataOut, chatroomName);
-
-            int status = dataIn.readInt();
-
-            if (status == MessageTypes.CHATROOMS_ROOM_FULL.value()) {
-                System.out.println("\nThat chatroom is already full!");
-            } else if (status == MessageTypes.CHATROOMS_USER_CONNECTED.value()) {
-                chatroomName = chatroomName.split(";")[0];
-                System.out.println("\n" + username + " connected to " + chatroomName + "!");
-                break;
-            }
+        int status = dataIn.readInt();
+        if (status == MessageTypes.CHATROOMS_USER_CONNECTED.value()) {
+            chatroomName = chatroomName.split(";")[0];
+            System.out.println("\n" + username + " connected to " + chatroomName + "!");
         }
 
         TextSpeech.sayMessage("Welcome to Echoboys messenger boii!");
