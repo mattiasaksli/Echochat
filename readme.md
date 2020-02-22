@@ -1,4 +1,4 @@
-#Instant Message App
+# Instant Message App
 
 *Fancy list of functions:*  
 
