@@ -1,17 +1,15 @@
-#Instant Message App from the Echoboys
+#Instant Message App
 
 *Fancy list of functions:*  
 
 • Chat rooms ✔
 
-• Funktsionaalsus häälsõnumite saatmiseks  ✔
+• Text-to-speech  ✔
 
-• Võimalik saata faile  ✔
+• Sending files  ✔
 
-• Võimalus vaadata sõnumite ajalugu ✔
+• Message history ✔
 
-• Kui sõnumi saaja on offline, saadab server e-mail teate ✔
+• Offline notifications ✔
 
-• Sisselogimine ✔
-
-• Kahe inimese messenger ✔
+• Encrypted passwords (ignore the fact that the private key is in this public repo) ✔
