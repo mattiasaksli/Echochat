@@ -12,4 +12,4 @@
 
 • Offline notifications ✔
 
-• Encrypted passwords (ignore the fact that the private key is in this public repo) ✔
+• Encrypted passwords ✔
